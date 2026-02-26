@@ -4,6 +4,7 @@ import { teams, masterSchedule } from './teams';
 import Home from './pages/Home';
 import TeamPage from './pages/TeamPage';
 import TeamsDirectory from './pages/TeamsDirectory';
+import ConferenceStandings from './pages/ConferenceStandings'; // New Import
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -33,12 +34,9 @@ function App() {
       if (!newResults[game.id]) {
         const homeTeam = teams.find(t => t.id === game.home);
         const awayTeam = teams.find(t => t.id === game.away);
-
-        if (homeTeam && !awayTeam) {
-          newResults[game.id] = game.home;
-        } else if (!homeTeam && awayTeam) {
-          newResults[game.id] = game.away;
-        } else if (homeTeam && awayTeam) {
+        if (homeTeam && !awayTeam) newResults[game.id] = game.home;
+        else if (!homeTeam && awayTeam) newResults[game.id] = game.away;
+        else if (homeTeam && awayTeam) {
           const homeStrength = homeTeam.rating + 2;
           const awayStrength = awayTeam.rating;
           newResults[game.id] = homeStrength >= awayStrength ? game.home : game.away;
@@ -66,7 +64,8 @@ function App() {
             <div className="flex items-center gap-8">
               <div className="flex gap-6 text-[10px] font-black uppercase tracking-[0.2em]">
                 <Link to="/" className="text-slate-500 hover:text-[#25bee8] transition-all">Poll</Link>
-                <Link to="/teams" className="text-slate-500 hover:text-[#25bee8] transition-all">Find Teams</Link>
+                <Link to="/standings" className="text-slate-500 hover:text-[#25bee8] transition-all">Standings</Link>
+                <Link to="/teams" className="text-slate-500 hover:text-[#25bee8] transition-all">Teams</Link>
               </div>
               <button 
                 onClick={resetAllPicks} 
@@ -80,6 +79,7 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Home teams={teams} schedule={masterSchedule} results={results} />} />
+            <Route path="/standings" element={<ConferenceStandings teams={teams} schedule={masterSchedule} results={results} />} />
             <Route path="/teams" element={<TeamsDirectory teams={teams} onAutoPredict={autoPredictAll} />} />
             <Route path="/team/:teamId" element={<TeamPage teams={teams} schedule={masterSchedule} results={results} onPick={handlePick} />} />
           </Routes>
