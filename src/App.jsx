@@ -1,10 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { teams, masterSchedule } from './teams'; 
+import { teams, masterSchedule } from './teams';
 import Home from './pages/Home';
 import TeamPage from './pages/TeamPage';
 import TeamsDirectory from './pages/TeamsDirectory';
-import ConferenceStandings from './pages/ConferenceStandings'; // New Import
+import ConferenceStandings from './pages/ConferenceStandings';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -28,18 +28,79 @@ function App() {
     setResults(prev => ({ ...prev, [gameId]: winnerId }));
   };
 
-  const autoPredictAll = () => {
+  const runSimulation = (mode) => {
     const newResults = { ...results };
+
     masterSchedule.forEach(game => {
       if (!newResults[game.id]) {
-        const homeTeam = teams.find(t => t.id === game.home);
-        const awayTeam = teams.find(t => t.id === game.away);
-        if (homeTeam && !awayTeam) newResults[game.id] = game.home;
-        else if (!homeTeam && awayTeam) newResults[game.id] = game.away;
-        else if (homeTeam && awayTeam) {
-          const homeStrength = homeTeam.rating + 2;
-          const awayStrength = awayTeam.rating;
-          newResults[game.id] = homeStrength >= awayStrength ? game.home : game.away;
+        const home = teams.find(t => t.id === game.home);
+        const away = teams.find(t => t.id === game.away);
+
+        if (!home || !away) {
+          newResults[game.id] = home ? game.home : game.away;
+          return;
+        }
+
+        // Realistic Base: Home Field Advantage +3
+        const homePower = home.rating + 3;
+        const awayPower = away.rating;
+        const diff = homePower - awayPower;
+
+        switch (mode) {
+          case 'realistic':
+            // Calculate the raw strength difference
+            const powerDiff = Math.abs(homePower - awayPower);
+
+            // Dynamic Upset Logic:
+            // If the gap is huge (20+), the upset chance is near 0%.
+            // If the gap is tiny (1-3), it's basically a 45% upset chance.
+            let dynamicUpsetThreshold = 0;
+
+            if (powerDiff > 25) {
+              dynamicUpsetThreshold = 0.001; // 1% chance (Total blowout)
+            } else if (powerDiff > 10) {
+              dynamicUpsetThreshold = 0.01; // 5% chance (Heavy favorite)
+            } else if (powerDiff > 7) {
+              dynamicUpsetThreshold = 0.05; // 15% chance (Standard favorite)
+            } else {
+              dynamicUpsetThreshold = 0.15; // 35% chance (Close game)
+            }
+
+            const roll = Math.random();
+            if (roll > dynamicUpsetThreshold) {
+              // Higher power wins
+              newResults[game.id] = homePower >= awayPower ? game.home : game.away;
+            } else {
+              // Upset occurs
+              newResults[game.id] = homePower >= awayPower ? game.away : game.home;
+            }
+            break;
+
+          case 'underdog':
+            // 70% chance the lower rated team wins
+            newResults[game.id] = Math.random() < 0.7
+              ? (homePower < awayPower ? game.home : game.away)
+              : (homePower >= awayPower ? game.home : game.away);
+            break;
+
+          case 'blueblood':
+            // Massive +15 boost to SEC/Big Ten
+            const hBias = (home.conf === 'SEC' || home.conf === 'Big Ten') ? 15 : 0;
+            const aBias = (away.conf === 'SEC' || away.conf === 'Big Ten') ? 15 : 0;
+            newResults[game.id] = (homePower + hBias) >= (awayPower + aBias) ? game.home : game.away;
+            break;
+
+          case 'homefortress':
+            // Home team gets +20 boost
+            newResults[game.id] = (homePower + 17) >= awayPower ? game.home : game.away;
+            break;
+
+          case 'coinflip':
+            newResults[game.id] = Math.random() > 0.5 ? game.home : game.away;
+            break;
+
+          default: // Standard Quick Predict
+            newResults[game.id] = homePower >= awayPower ? game.home : game.away;
         }
       }
     });
@@ -67,8 +128,8 @@ function App() {
                 <Link to="/standings" className="text-slate-500 hover:text-[#25bee8] transition-all">Standings</Link>
                 <Link to="/teams" className="text-slate-500 hover:text-[#25bee8] transition-all">Teams</Link>
               </div>
-              <button 
-                onClick={resetAllPicks} 
+              <button
+                onClick={resetAllPicks}
                 className="px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-600 hover:border-red-100"
               >
                 Reset
@@ -80,7 +141,17 @@ function App() {
           <Routes>
             <Route path="/" element={<Home teams={teams} schedule={masterSchedule} results={results} />} />
             <Route path="/standings" element={<ConferenceStandings teams={teams} schedule={masterSchedule} results={results} />} />
-            <Route path="/teams" element={<TeamsDirectory teams={teams} onAutoPredict={autoPredictAll} />} />
+            <Route
+              path="/teams"
+              element={
+                <TeamsDirectory
+                  teams={teams}
+                  masterSchedule={masterSchedule} // Add this
+                  results={results}               // Add this
+                  onSimulate={runSimulation}
+                />
+              }
+            />
             <Route path="/team/:teamId" element={<TeamPage teams={teams} schedule={masterSchedule} results={results} onPick={handlePick} />} />
           </Routes>
         </main>
