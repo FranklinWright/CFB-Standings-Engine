@@ -16,15 +16,9 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
     return styles[conf] || '#94a3b8';
   };
 
-  const conferences = useMemo(() => {
-    const all = [...new Set(teams.map(t => t.conf))].sort();
-    const priority = ['SEC', 'Big Ten'];
-    const others = all.filter(c => !priority.includes(c));
-    return ['All', ...priority, ...others];
-  }, [teams]);
-
-  const filteredTeams = useMemo(() => {
-    const teamStats = teams.map(team => {
+  // 1. Calculate all stats globally first
+  const allTeamStats = useMemo(() => {
+    return teams.map(team => {
       let wins = 0;
       let losses = 0;
       masterSchedule.forEach(game => {
@@ -38,8 +32,19 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
       const winPct = totalGames > 0 ? wins / totalGames : 0;
       return { ...team, wins, losses, winPct, totalGames };
     });
+  }, [teams, masterSchedule, results]);
 
-    let result = teamStats.filter(team => {
+  // 2. Calculate Top 25 National Ranks to show next to names
+  const nationalRanks = useMemo(() => {
+    const sorted = [...allTeamStats].sort((a, b) => b.wins - a.wins || b.rating - a.rating);
+    const ranks = {};
+    sorted.forEach((t, i) => { ranks[t.id] = i + 1; });
+    return ranks;
+  }, [allTeamStats]);
+
+  // 3. Filter for display
+  const filteredTeams = useMemo(() => {
+    let result = allTeamStats.filter(team => {
       const matchesSearch = team.name.toLowerCase().includes(search.toLowerCase());
       const matchesConf = selectedConf === 'All' || team.conf === selectedConf;
       return matchesSearch && matchesConf;
@@ -49,37 +54,42 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
       result.sort((a, b) => a.name.localeCompare(b.name));
     } else {
       result.sort((a, b) => {
-        // Logic: Push teams with less than 12 games to the bottom
         const aHasFullSchedule = a.totalGames >= 12;
         const bHasFullSchedule = b.totalGames >= 12;
 
         if (aHasFullSchedule && !bHasFullSchedule) return -1;
         if (!aHasFullSchedule && bHasFullSchedule) return 1;
 
-        // If both are full (or both are bummy), sort by AP Poll logic
         return b.winPct - a.winPct || b.wins - a.wins || b.rating - a.rating;
       });
     }
     return result;
-  }, [teams, masterSchedule, results, search, selectedConf, sortBy]);
+  }, [allTeamStats, search, selectedConf, sortBy]);
 
   const simModes = [
-    { id: 'realistic', label: 'Realistic Sim', desc: 'Ratings + Home Field + Random Upsets', icon: '🏈' },
+    { id: 'realistic', label: 'Realistic Sim', desc: 'Ratings + Home Field + Random Upsets', icon: '🎯' },
     { id: 'blueblood', label: 'Blue Blood Bias', desc: 'Massive boost to SEC & Big Ten', icon: '👑' },
-    { id: 'underdog', label: 'Underdog Story', desc: 'Lower rated teams win 70% of games', icon: '👟' },
+    { id: 'underdog', label: 'Underdog Story', desc: 'Lower rated teams win 70% of games', icon: '🐕' },
     { id: 'homefortress', label: 'Home Fortress', desc: 'Home teams are nearly unbeatable', icon: '🏰' },
     { id: 'coinflip', label: 'Pure Chaos', desc: '50/50 chance for every single game', icon: '🎲' }
   ];
 
+  const conferences = useMemo(() => {
+    const all = [...new Set(teams.map(t => t.conf))].sort();
+    const priority = ['SEC', 'Big Ten'];
+    const others = all.filter(c => !priority.includes(c));
+    return ['All', ...priority, ...others];
+  }, [teams]);
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20">
       <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col">
           <div className="flex flex-col lg:flex-row gap-4 items-center">
             <input 
               type="text" 
               placeholder={`Search ${filteredTeams.length} ${selectedConf === 'All' ? 'FBS' : selectedConf} Teams...`} 
-              className="flex-1 w-full bg-gray-100 border-2 border-transparent focus:bg-white rounded-2xl px-6 py-3 text-slate-900 outline-none transition-all font-bold text-lg focus:border-[#25bee8]"
+              className="flex-1 w-full bg-gray-100 border-2 border-transparent focus:bg-white rounded-xl px-6 py-3 text-slate-900 outline-none transition-all font-bold text-lg focus:border-[#25bee8]"
               onChange={(e) => setSearch(e.target.value)}
             />
             
@@ -89,11 +99,11 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
                   onClick={() => setShowSimMenu(!showSimMenu)}
                   className="w-full px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] transition-all border-2 border-black bg-[#25bee8] text-white flex items-center justify-center gap-2 hover:bg-[#f5ce42] hover:text-black shadow-lg"
                 >
-                  Simulation Tools ▾
+                  Simulation Tools 🛠️
                 </button>
 
                 {showSimMenu && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white border-2 border-black rounded-2xl shadow-2xl z-50 overflow-hidden text-left">
+                  <div className="absolute right-0 mt-2 w-72 bg-white border-2 border-black rounded-xl shadow-2xl z-50 overflow-hidden text-left">
                     <div className="bg-gray-50 p-3 border-b border-gray-100 text-[9px] font-black uppercase text-slate-400 tracking-widest">Select Logic</div>
                     {simModes.map(mode => (
                       <button
@@ -171,26 +181,34 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
       </div>
 
       <div className="max-w-7xl mx-auto p-6 md:p-12">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-          {filteredTeams.map((team, index) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          {filteredTeams.map((team) => (
             <Link 
               to={`/team/${team.id}`} 
               key={team.id} 
-              className="group bg-white border border-gray-100 rounded-[2rem] p-8 transition-all text-center relative overflow-hidden flex flex-col items-center justify-center min-h-[160px] shadow-sm hover:shadow-xl"
+              className="group bg-white border border-gray-100 rounded-2xl p-4 transition-all text-center relative overflow-hidden flex flex-col items-center justify-center min-h-[140px] shadow-sm hover:shadow-xl hover:-translate-y-1"
             >
               <div className="absolute top-0 left-0 w-full h-1.5 z-20" style={{ backgroundColor: team.color }} />
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity z-10" style={{ backgroundColor: team.color }} />
               
-              {sortBy === 'rank' && search === '' && (
-                <div className="absolute top-4 left-6 text-[14px] font-black text-slate-200 group-hover:text-white/50 transition-colors">
-                  #{index + 1}
-                </div>
-              )}
-
-              <div className="relative z-30">
-                <h3 className="text-xl font-black uppercase tracking-tight text-slate-800 group-hover:text-white transition-colors leading-tight">{team.name}</h3>
-                <div className="flex flex-col items-center mt-2">
-                  <p className="text-[10px] font-black text-slate-300 uppercase group-hover:text-white/80">{team.conf}</p>
+              <div className="relative z-30 flex flex-col items-center w-full mt-2">
+                {team.logo && (
+                  <div className="bg-white p-1.5 rounded-full mb-2 shadow-sm border border-gray-100 group-hover:shadow-md group-hover:scale-110 transition-all duration-300">
+                    <img src={team.logo} alt={team.name} className="w-10 h-10 object-contain drop-shadow-sm" />
+                  </div>
+                )}
+                
+                <h3 className="text-lg font-black uppercase tracking-tight text-slate-800 group-hover:text-white transition-colors leading-tight flex items-center justify-center gap-1.5">
+                  {/* Top 25 Rank next to the name */}
+                  {nationalRanks[team.id] <= 25 && (
+                     <span className="text-slate-900 group-hover:text-white">#{nationalRanks[team.id]}</span>
+                  )}
+                  {team.name}
+                </h3>
+                <div className="flex flex-col items-center mt-1">
+                  <p className="text-[9px] font-black text-slate-400 uppercase group-hover:text-white/80 transition-colors">
+                    {team.conf}
+                  </p>
                 </div>
               </div>
             </Link>

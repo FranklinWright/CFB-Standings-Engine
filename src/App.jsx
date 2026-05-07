@@ -1,163 +1,116 @@
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { teams, masterSchedule } from './teams';
-import Home from './pages/Home';
-import TeamPage from './pages/TeamPage';
-import TeamsDirectory from './pages/TeamsDirectory';
-import ConferenceStandings from './pages/ConferenceStandings';
+// Inside src/App.jsx, replace your playoffData variable with this:
 
-function ScrollToTop() {
-  const { pathname } = useLocation();
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
-  return null;
-}
-
-function App() {
-  const [results, setResults] = useState(() => {
-    const saved = localStorage.getItem('cfb_picks_2026');
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  useEffect(() => {
-    localStorage.setItem('cfb_picks_2026', JSON.stringify(results));
-  }, [results]);
-
-  const handlePick = (gameId, winnerId) => {
-    setResults(prev => ({ ...prev, [gameId]: winnerId }));
-  };
-
-  const runSimulation = (mode) => {
-    const newResults = { ...results };
-
+  const playoffData = useMemo(() => {
+    const stats = teams.map(t => ({ ...t, wins: 0, losses: 0, confWins: 0, confLosses: 0 }));
+    
+    // 1. Calculate Regular Season Stats
     masterSchedule.forEach(game => {
-      if (!newResults[game.id]) {
-        const home = teams.find(t => t.id === game.home);
-        const away = teams.find(t => t.id === game.away);
-
-        if (!home || !away) {
-          newResults[game.id] = home ? game.home : game.away;
+      const winnerId = results[game.id];
+      if (winnerId) {
+        const homeTeam = teams.find(t => t.id === game.home);
+        const awayTeam = teams.find(t => t.id === game.away);
+        if (!homeTeam || !awayTeam) {
+          const winT = stats.find(t => t.id === winnerId);
+          const lossT = stats.find(t => t.id === (winnerId === game.home ? game.away : game.home));
+          if (winT) winT.wins++;
+          if (lossT) lossT.losses++;
           return;
         }
-
-        // Realistic Base: Home Field Advantage +3
-        const homePower = home.rating + 3;
-        const awayPower = away.rating;
-        const diff = homePower - awayPower;
-
-        switch (mode) {
-          case 'realistic':
-            // Calculate the raw strength difference
-            const powerDiff = Math.abs(homePower - awayPower);
-
-            // Dynamic Upset Logic:
-            // If the gap is huge (20+), the upset chance is near 0%.
-            // If the gap is tiny (1-3), it's basically a 45% upset chance.
-            let dynamicUpsetThreshold = 0;
-
-            if (powerDiff > 25) {
-              dynamicUpsetThreshold = 0.001; // 1% chance (Total blowout)
-            } else if (powerDiff > 10) {
-              dynamicUpsetThreshold = 0.01; // 5% chance (Heavy favorite)
-            } else if (powerDiff > 7) {
-              dynamicUpsetThreshold = 0.05; // 15% chance (Standard favorite)
-            } else {
-              dynamicUpsetThreshold = 0.15; // 35% chance (Close game)
-            }
-
-            const roll = Math.random();
-            if (roll > dynamicUpsetThreshold) {
-              // Higher power wins
-              newResults[game.id] = homePower >= awayPower ? game.home : game.away;
-            } else {
-              // Upset occurs
-              newResults[game.id] = homePower >= awayPower ? game.away : game.home;
-            }
-            break;
-
-          case 'underdog':
-            // 70% chance the lower rated team wins
-            newResults[game.id] = Math.random() < 0.7
-              ? (homePower < awayPower ? game.home : game.away)
-              : (homePower >= awayPower ? game.home : game.away);
-            break;
-
-          case 'blueblood':
-            // Massive +15 boost to SEC/Big Ten
-            const hBias = (home.conf === 'SEC' || home.conf === 'Big Ten') ? 15 : 0;
-            const aBias = (away.conf === 'SEC' || away.conf === 'Big Ten') ? 15 : 0;
-            newResults[game.id] = (homePower + hBias) >= (awayPower + aBias) ? game.home : game.away;
-            break;
-
-          case 'homefortress':
-            // Home team gets +20 boost
-            newResults[game.id] = (homePower + 17) >= awayPower ? game.home : game.away;
-            break;
-
-          case 'coinflip':
-            newResults[game.id] = Math.random() > 0.5 ? game.home : game.away;
-            break;
-
-          default: // Standard Quick Predict
-            newResults[game.id] = homePower >= awayPower ? game.home : game.away;
+        const winT = stats.find(t => t.id === winnerId);
+        const lossT = stats.find(t => t.id === (winnerId === game.home ? game.away : game.home));
+        if (winT) winT.wins++;
+        if (lossT) lossT.losses++;
+        if (homeTeam.conf === awayTeam.conf) {
+          if (winT) winT.confWins++;
+          if (lossT) lossT.confLosses++;
         }
       }
     });
-    setResults(newResults);
-  };
 
-  const resetAllPicks = () => {
-    if (window.confirm("Clear all your 2026 picks?")) setResults({});
-  };
+    stats.sort((a, b) => b.wins - a.wins || b.rating - a.rating);
+    stats.forEach((t, i) => t.rank = i + 1);
 
-  return (
-    <Router>
-      <ScrollToTop />
-      <div className="min-h-screen bg-gray-50 font-sans text-slate-900 transition-colors duration-300">
-        <nav className="bg-white/90 backdrop-blur-md border-b-4 p-4 sticky top-0 z-50 shadow-sm" style={{ borderBottomColor: '#f5ce42' }}>
-          <div className="max-w-7xl mx-auto flex justify-between items-center">
-            <Link to="/" className="flex items-center gap-2 group">
-              <span className="text-3xl font-black tracking-tighter uppercase italic transition-colors" style={{ color: '#25bee8' }}>
-                CFB<span style={{ color: '#f5ce42' }}>ENGINE</span>
-              </span>
-            </Link>
-            <div className="flex items-center gap-8">
-              <div className="flex gap-6 text-[10px] font-black uppercase tracking-[0.2em]">
-                <Link to="/" className="text-slate-500 hover:text-[#25bee8] transition-all">Poll</Link>
-                <Link to="/standings" className="text-slate-500 hover:text-[#25bee8] transition-all">Standings</Link>
-                <Link to="/teams" className="text-slate-500 hover:text-[#25bee8] transition-all">Teams</Link>
-              </div>
-              <button
-                onClick={resetAllPicks}
-                className="px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-600 hover:border-red-100"
-              >
-                Reset
-              </button>
-            </div>
-          </div>
-        </nav>
-        <main>
-          <Routes>
-            <Route path="/" element={<Home teams={teams} schedule={masterSchedule} results={results} />} />
-            <Route path="/standings" element={<ConferenceStandings teams={teams} schedule={masterSchedule} results={results} />} />
-            <Route
-              path="/teams"
-              element={
-                <TeamsDirectory
-                  teams={teams}
-                  masterSchedule={masterSchedule} // Add this
-                  results={results}               // Add this
-                  onSimulate={runSimulation}
-                />
-              }
-            />
-            <Route path="/team/:teamId" element={<TeamPage teams={teams} schedule={masterSchedule} results={results} onPick={handlePick} />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
-  );
-}
+    // 2. Generate Conference Championship Games (Top 2 from each conference)
+    const confs = [...new Set(stats.map(t => t.conf))].filter(c => c !== 'Independent');
+    const ccGames = [];
+    const confChamps = [];
 
-export default App;
+    confs.forEach(conf => {
+      const confTeams = stats.filter(t => t.conf === conf).sort((a, b) => b.confWins - a.confWins || b.wins - a.wins || b.rating - a.rating);
+      
+      if (confTeams.length >= 2) {
+        const home = confTeams[0]; // #1 Seed in Conference
+        const away = confTeams[1]; // #2 Seed in Conference
+        const gameId = `cc_${conf.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}`;
+        
+        ccGames.push({
+          id: gameId,
+          round: 0,
+          name: `${conf} Championship`,
+          detail: 'Dec. 5/6 • Neutral Site',
+          home: home.id,
+          away: away.id,
+          isCCG: true
+        });
+        
+        // If user picked a winner for the CCG, they are the champ. Otherwise, project the #1 seed.
+        if (results[gameId]) {
+          confChamps.push(stats.find(t => t.id === results[gameId]));
+        } else {
+          confChamps.push(home); 
+        }
+      } else if (confTeams.length === 1) {
+        confChamps.push(confTeams[0]);
+      }
+    });
+
+    // 3. CFP Selection Logic (5 Auto-Bids + 7 At-Larges)
+    const getChamp = (confNames) => {
+      const eligible = confChamps.filter(c => confNames.includes(c.conf)).sort((a,b) => a.rank - b.rank);
+      return eligible[0];
+    };
+
+    const power4Champs = [getChamp(['ACC']), getChamp(['Big Ten']), getChamp(['Big 12']), getChamp(['SEC'])].filter(Boolean);
+    const g6Champs = confChamps.filter(c => !['ACC', 'Big Ten', 'Big 12', 'SEC', 'Independent'].includes(c.conf)).sort((a,b) => a.rank - b.rank);
+    const highestG6Champ = g6Champs[0];
+
+    const autoQualifiers = [...power4Champs, highestG6Champ].filter(Boolean).sort((a,b) => a.rank - b.rank);
+    
+    // Top 4 Ranked Champions get Seeds 1-4
+    const top4Champs = autoQualifiers.slice(0, 4);
+    const fifthChamp = autoQualifiers[4];
+
+    // Next 7 Highest Ranked
+    let remaining = stats.filter(t => !top4Champs.find(c => c.id === t.id) && (!fifthChamp || t.id !== fifthChamp.id));
+    const atLarges = remaining.slice(0, 7);
+
+    // Seeds 5-12
+    const next8 = [...(fifthChamp ? [fifthChamp] : []), ...atLarges].sort((a, b) => a.rank - b.rank);
+    const seedsArray = [...top4Champs, ...next8];
+    
+    const seedMap = {};
+    seedsArray.forEach((t, i) => seedMap[t.id] = i + 1);
+    const getSeed = (num) => seedsArray[num - 1];
+
+    // 4. Combine CCGs and CFP Games
+    const games = [
+      ...ccGames,
+      
+      { id: 'p_r1_1', round: 1, name: 'First Round', detail: 'Dec. 19/20 • Campus Site', home: getSeed(5)?.id, away: getSeed(12)?.id },
+      { id: 'p_r1_2', round: 1, name: 'First Round', detail: 'Dec. 20 • Campus Site', home: getSeed(6)?.id, away: getSeed(11)?.id },
+      { id: 'p_r1_3', round: 1, name: 'First Round', detail: 'Dec. 20 • Campus Site', home: getSeed(7)?.id, away: getSeed(10)?.id },
+      { id: 'p_r1_4', round: 1, name: 'First Round', detail: 'Dec. 20 • Campus Site', home: getSeed(8)?.id, away: getSeed(9)?.id },
+      
+      { id: 'p_qf_1', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(1)?.id, away: results['p_r1_4'] || null },
+      { id: 'p_qf_4', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(4)?.id, away: results['p_r1_1'] || null },
+      { id: 'p_qf_2', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(2)?.id, away: results['p_r1_3'] || null },
+      { id: 'p_qf_3', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(3)?.id, away: results['p_r1_2'] || null },
+      
+      { id: 'p_sf_1', round: 3, name: 'Semifinal', detail: 'Jan. 8 • Fiesta Bowl', home: results['p_qf_1'] || null, away: results['p_qf_4'] || null },
+      { id: 'p_sf_2', round: 3, name: 'Semifinal', detail: 'Jan. 9 • Peach Bowl', home: results['p_qf_2'] || null, away: results['p_qf_3'] || null },
+      
+      { id: 'p_nc', round: 4, name: 'National Championship', detail: 'Jan. 19 • Miami, FL', home: results['p_sf_1'] || null, away: results['p_sf_2'] || null }
+    ];
+
+    return { seeds: seedsArray, seedMap, games, ccGames };
+  }, [teams, masterSchedule, results]);

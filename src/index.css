@@ -1,7 +1,13 @@
+/* src/index.css */
 @import "tailwindcss";
 
 @layer base {
   body {
-    @apply bg-gray-50 text-slate-900;
+    @apply bg-gray-50 text-slate-900 antialiased;
   }
+}
+
+/* Custom shadow for the hero text */
+.drop-shadow-xl {
+  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.25)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
 }

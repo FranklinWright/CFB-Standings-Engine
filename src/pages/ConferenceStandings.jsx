@@ -2,8 +2,22 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
 function ConferenceStandings({ teams, schedule, results }) {
+  // National ranks calculated for Top 25 display
+  const nationalRanks = useMemo(() => {
+    const stats = teams.map(t => {
+      let wins = 0;
+      schedule.forEach(game => {
+        if (results[game.id] === t.id) wins++;
+      });
+      return { id: t.id, wins, rating: t.rating };
+    });
+    stats.sort((a, b) => b.wins - a.wins || b.rating - a.rating);
+    const ranks = {};
+    stats.forEach((t, i) => ranks[t.id] = i + 1);
+    return ranks;
+  }, [teams, schedule, results]);
+
   const standingsData = useMemo(() => {
-    // 1. Initialize stats for all teams
     const stats = teams.map(t => ({ 
       ...t, 
       wins: 0, 
@@ -12,14 +26,12 @@ function ConferenceStandings({ teams, schedule, results }) {
       confLosses: 0 
     }));
     
-    // 2. Calculate records
     schedule.forEach(game => {
       const winnerId = results[game.id];
       if (winnerId) {
         const homeTeam = teams.find(t => t.id === game.home);
         const awayTeam = teams.find(t => t.id === game.away);
         
-        // Skip if one team is an "unknown" FCS school
         if (!homeTeam || !awayTeam) {
           const winnerStats = stats.find(t => t.id === winnerId);
           const loserId = winnerId === game.home ? game.away : game.home;
@@ -33,11 +45,9 @@ function ConferenceStandings({ teams, schedule, results }) {
         const winT = stats.find(t => t.id === winnerId);
         const lossT = stats.find(t => t.id === loserId);
         
-        // Update Overall Records
         if (winT) winT.wins++;
         if (lossT) lossT.losses++;
 
-        // Update Conference Records if both teams are in the same conference
         if (homeTeam.conf === awayTeam.conf) {
           if (winT) winT.confWins++;
           if (lossT) lossT.confLosses++;
@@ -61,7 +71,6 @@ function ConferenceStandings({ teams, schedule, results }) {
       name: conf,
       teams: stats
         .filter(t => t.conf === conf)
-        // Primary Sort: Conf Wins, Secondary: Overall Wins, Tertiary: Rating
         .sort((a, b) => b.confWins - a.confWins || b.wins - a.wins || b.rating - a.rating)
     }));
   }, [teams, schedule, results]);
@@ -70,32 +79,54 @@ function ConferenceStandings({ teams, schedule, results }) {
     const styles = {
       'SEC': '#f5ce42', 'Big Ten': '#25bee8', 'ACC': '#003087',
       'Big 12': '#C41230', 'Pac-12': '#ff4d4d', 'American': '#006747', 
-      'Independent': '#0c2340', 'CUSA': '#003366'
+      'Independent': '#0c2340', 'CUSA': '#003366', 'Mountain West': '#98002e',
+      'Sun Belt': '#0039A6', 'MAC': '#006633'
     };
     return styles[conf] || '#94a3b8';
+  };
+
+  const scrollToConf = (confName) => {
+    const element = document.getElementById(`conf-${confName}`);
+    if (element) {
+      const y = element.getBoundingClientRect().top + window.scrollY - 100;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="bg-white border-b border-gray-200 py-12 px-6 mb-8 text-center shadow-sm">
-        <h1 className="text-5xl font-black italic uppercase tracking-tighter text-slate-900">
+        <h1 className="text-5xl md:text-6xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">
           <span style={{ color: '#25bee8' }}>CONFERENCE</span> <span style={{ color: '#f5ce42' }}>STANDINGS</span>
         </h1>
+        
+        <div className="max-w-5xl mx-auto flex flex-wrap justify-center gap-2 md:gap-3 mt-8">
+          {standingsData.map(conf => (
+            <button
+              key={conf.name}
+              onClick={() => scrollToConf(conf.name)}
+              className="px-4 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md text-white"
+              style={{ backgroundColor: getConfColor(conf.name) }}
+            >
+              {conf.name}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-10">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 xl:grid-cols-2 gap-10">
         {standingsData.map(conf => (
-          <div key={conf.name} className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 flex items-center justify-between border-b-4" style={{ borderBottomColor: getConfColor(conf.name) }}>
-              <h2 className="text-2xl font-black uppercase tracking-tight">{conf.name}</h2>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{conf.teams.length} Teams</span>
+          <div key={conf.name} id={`conf-${conf.name}`} className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300">
+            <div className="p-6 flex items-center justify-between border-b-4 bg-gray-50/30" style={{ borderBottomColor: getConfColor(conf.name) }}>
+              <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-slate-900">{conf.name}</h2>
+              <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest bg-white px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">{conf.teams.length} Teams</span>
             </div>
             
-            <div className="divide-y divide-gray-50">
-              <div className="grid grid-cols-12 p-4 text-[10px] font-black uppercase text-slate-400 tracking-widest bg-gray-50/50">
+            <div className="divide-y divide-gray-100">
+              <div className="grid grid-cols-12 p-4 text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-widest bg-white">
                 <div className="col-span-1 text-center">#</div>
-                <div className="col-span-5">School</div>
-                <div className="col-span-3 text-center">CONF</div>
+                <div className="col-span-6 md:col-span-5">School</div>
+                <div className="col-span-2 md:col-span-3 text-center">CONF</div>
                 <div className="col-span-3 text-center">OVERALL</div>
               </div>
               
@@ -103,19 +134,37 @@ function ConferenceStandings({ teams, schedule, results }) {
                 <Link 
                   to={`/team/${team.id}`} 
                   key={team.id}
-                  className="grid grid-cols-12 p-5 items-center hover:bg-gray-50 transition-colors group"
+                  className="grid grid-cols-12 p-4 md:p-5 items-center hover:bg-gray-50 transition-colors group"
                 >
-                  <div className="col-span-1 text-center font-black text-slate-300 group-hover:text-[#25bee8]">{index + 1}</div>
-                  <div className="col-span-5 flex items-center gap-3">
-                    <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: team.color }} />
-                    <span className="font-bold text-slate-800 uppercase text-sm truncate">{team.name}</span>
+                  {/* Made the # number black instead of gray */}
+                  <div className="col-span-1 text-center font-black text-slate-900 group-hover:text-[#25bee8] transition-colors">{index + 1}</div>
+                  
+                  <div className="col-span-6 md:col-span-5 flex items-center gap-2 md:gap-4">
+                    <div className="hidden sm:block w-1.5 h-8 md:h-10 rounded-full shadow-sm" style={{ backgroundColor: team.color }} />
+                    
+                    {team.logo && (
+                      <div className="w-8 h-8 md:w-10 md:h-10 shrink-0">
+                        <img 
+                          src={team.logo} 
+                          alt={team.name} 
+                          className="w-full h-full object-contain drop-shadow-sm group-hover:scale-110 transition-transform duration-300" 
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-1.5 truncate">
+                      {/* Top 25 Rank inserted next to the name */}
+                      {nationalRanks[team.id] <= 25 && <span className="font-black text-slate-900 text-xs">#{nationalRanks[team.id]}</span>}
+                      <span className="font-bold text-slate-800 uppercase text-xs md:text-sm truncate group-hover:text-slate-950">{team.name}</span>
+                    </div>
                   </div>
-                  {/* Conference Record Column */}
-                  <div className="col-span-3 text-center font-black text-slate-900 text-lg">
-                    {team.confWins}-{team.confLosses}
+
+                  <div className="col-span-2 md:col-span-3 text-center font-black text-slate-900 text-base md:text-lg">
+                    {team.confWins}<span className="text-slate-300 font-light mx-0.5">-</span>{team.confLosses}
                   </div>
-                  {/* Overall Record Column */}
-                  <div className="col-span-3 text-center font-bold text-slate-400">
+                  
+                  {/* Made the overall record black instead of gray */}
+                  <div className="col-span-3 text-center font-bold text-slate-900 text-sm md:text-base">
                     {team.wins}-{team.losses}
                   </div>
                 </Link>
