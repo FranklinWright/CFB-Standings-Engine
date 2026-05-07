@@ -48,7 +48,9 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
   }, [schedule, teamId, playoffData]);
 
   const confStyle = getConfStyles(team?.conf);
-  const playoffSeed = playoffData?.seedMap[teamId];
+  
+  // Only show the seed if the CFP bracket is actually unlocked and generated
+  const playoffSeed = playoffData?.ccgsComplete ? playoffData?.seedMap[teamId] : null;
 
   return (
     <div className="min-h-screen bg-gray-50 text-slate-900 font-sans pb-20">
@@ -124,7 +126,6 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
           return (
             <div 
               key={game.id} 
-              // Changed styling: Playoff games are dark slate, CCG games are light blue
               className={`bg-white border rounded-3xl p-4 md:p-6 flex flex-col md:flex-row items-center justify-between transform transition-all duration-300 hover:scale-[1.01] hover:shadow-lg border-l-[12px] 
                 ${game.isPlayoff ? 'border-slate-900 shadow-md' : game.isCCG ? 'border-[#25bee8] shadow-md' : 'border-gray-100 shadow-sm'}`} 
               style={{ borderLeftColor: game.isPlayoff ? '#0f172a' : game.isCCG ? '#25bee8' : team?.color }}
@@ -135,7 +136,6 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
                   {game.isPlayoff ? '🏆 CFP ' : game.isCCG ? '🏅 ' : ''} {game.name} • {game.location}
                 </p>
                 
-                {/* Opponent Logo added next to their name */}
                 <h3 className="text-2xl md:text-3xl font-black uppercase text-slate-900 flex items-center justify-center md:justify-start gap-2 md:gap-3">
                   <span className="text-slate-300 italic mr-1 text-lg md:text-xl">{isHome ? 'vs' : '@'}</span>
                   {opponent.logo && <img src={opponent.logo} className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-sm" alt="" />}

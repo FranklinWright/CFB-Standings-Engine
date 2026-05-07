@@ -3,18 +3,84 @@ import { Link } from 'react-router-dom';
 
 function Home({ teams, schedule, results }) {
   const standings = useMemo(() => {
-    const stats = teams.map(t => ({ ...t, wins: 0, losses: 0 }));
+    const getConfMultiplier = (conf) => {
+      if (!conf) return 0.5;
+      
+      // Massive SEC & Big Ten Bias (The "Power 2")
+      if (conf === "SEC" || conf === "Big Ten") return 1.40;
+      
+      // Standard Power Conference (ACC & Big 12)
+      if (conf === "ACC" || conf === "Big 12") return 1.15;
+      
+      // Group of 5
+      const groupOf5 = ["American", "Mountain West", "Sun Belt", "MAC", "CUSA", "Independent"];
+      if (groupOf5.includes(conf)) return 0.90;
+      
+      return 0.5; // FCS
+    };
+
+    const stats = teams.map(t => ({ ...t, wins: 0, losses: 0, resumeScore: 0, gamesPlayed: 0 }));
+    
     schedule.forEach(game => {
       const winnerId = results[game.id];
       if (winnerId) {
         const loserId = winnerId === game.home ? game.away : game.home;
         const winT = stats.find(t => t.id === winnerId);
         const lossT = stats.find(t => t.id === loserId);
-        if (winT) winT.wins++;
-        if (lossT) lossT.losses++;
+        
+        // WINNER LOGIC
+        if (winT) {
+          winT.wins++;
+          winT.gamesPlayed++;
+          
+          if (!lossT) {
+            winT.resumeScore += 115; 
+          } else {
+            let winPoints = 100 + (lossT.rating * getConfMultiplier(lossT.conf));
+            if (winnerId === game.away) winPoints += 15; // Road win
+            
+            // Explicit Committee Bias: Extra points just for being in the SEC or Big Ten
+            if (winT.conf === "SEC" || winT.conf === "Big Ten") winPoints += 25;
+            
+            winT.resumeScore += winPoints;
+          }
+        }
+
+        // LOSER LOGIC
+        if (lossT) {
+          lossT.losses++;
+          lossT.gamesPlayed++;
+
+          if (!winT) {
+            lossT.resumeScore -= 100;
+          } else {
+            // Quality Loss Mechanics: Losing to a 95+ overall SEC team barely hurts you
+            let lossPenalty = 130 - (winT.rating * getConfMultiplier(winT.conf));
+            
+            // Prevent negative penalties (getting rewarded for losing)
+            if (lossPenalty < 5) lossPenalty = 5; 
+            
+            if (loserId === game.home) lossPenalty += 15; 
+            lossT.resumeScore -= lossPenalty;
+            
+            // Track Conference Records (Only needed in App.jsx, but safe here)
+            if (winT && winT.conf === lossT.conf) {
+              winT.confWins = (winT.confWins || 0) + 1;
+              lossT.confLosses = (lossT.confLosses || 0) + 1;
+            }
+          }
+        }
       }
     });
-    return stats.sort((a, b) => b.wins - a.wins || b.rating - a.rating);
+
+    return stats.sort((a, b) => {
+      if (Math.abs(b.resumeScore - a.resumeScore) < 5) {
+        const pctA = a.wins / (a.gamesPlayed || 1);
+        const pctB = b.wins / (b.gamesPlayed || 1);
+        return pctB - pctA;
+      }
+      return b.resumeScore - a.resumeScore;
+    });
   }, [teams, schedule, results]);
 
   const top25 = standings.slice(0, 25);
@@ -42,7 +108,6 @@ function Home({ teams, schedule, results }) {
               className="group bg-white hover:bg-gray-50 border border-gray-200 rounded-2xl p-3 md:p-4 flex items-center justify-between transition-all shadow-sm hover:shadow-md hover:scale-[1.01]"
             >
               <div className="flex items-center gap-3 md:gap-5">
-                {/* Made rank numbers black here */}
                 <span className="text-2xl md:text-3xl font-black italic text-slate-900 group-hover:text-[#25bee8] transition-colors w-8 md:w-10 text-center">
                   {i + 1}
                 </span>
