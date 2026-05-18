@@ -58,7 +58,6 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
-      {/* HEADER - Sticky class removed so it stays at the top of the page only */}
       <div className="bg-white py-12 px-6 text-center shadow-sm border-b border-gray-200">
         <h1 className="text-5xl md:text-6xl font-black italic uppercase tracking-tighter leading-none text-slate-900">
           <span className="text-[#25bee8]">THE</span> POSTSEASON
@@ -90,24 +89,24 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
                     
                     {/* ROUND 1 */}
                     <div className="flex flex-col justify-between h-[750px] py-4">
+                        <GameCard gameId="p_r1_4" /> {/* 8v9 */}
                         <GameCard gameId="p_r1_1" /> {/* 5v12 */}
                         <GameCard gameId="p_r1_2" /> {/* 6v11 */}
                         <GameCard gameId="p_r1_3" /> {/* 7v10 */}
-                        <GameCard gameId="p_r1_4" /> {/* 8v9 */}
                     </div>
 
                     {/* QUARTERFINALS */}
                     <div className="flex flex-col justify-between h-[750px] py-4">
-                        <GameCard gameId="p_qf_4" /> 
-                        <GameCard gameId="p_qf_3" /> 
-                        <GameCard gameId="p_qf_2" /> 
-                        <GameCard gameId="p_qf_1" /> 
+                        <GameCard gameId="p_qf_1" /> {/* Seed 1 vs 8v9 */}
+                        <GameCard gameId="p_qf_4" /> {/* Seed 4 vs 5v12 */}
+                        <GameCard gameId="p_qf_3" /> {/* Seed 3 vs 6v11 */}
+                        <GameCard gameId="p_qf_2" /> {/* Seed 2 vs 7v10 */}
                     </div>
 
                     {/* SEMIFINALS */}
                     <div className="flex flex-col justify-around h-[750px] py-16">
-                        <GameCard gameId="p_sf_1" className="border-[#25bee8]/50 shadow-[#25bee8]/10" />
-                        <GameCard gameId="p_sf_2" className="border-[#25bee8]/50 shadow-[#25bee8]/10" />
+                        <GameCard gameId="p_sf_1" className="border-[#25bee8]/50 shadow-[#25bee8]/10" /> {/* 1 vs 4 bracket */}
+                        <GameCard gameId="p_sf_2" className="border-[#25bee8]/50 shadow-[#25bee8]/10" /> {/* 2 vs 3 bracket */}
                     </div>
 
                     {/* NATIONAL CHAMPIONSHIP */}

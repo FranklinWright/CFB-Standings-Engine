@@ -269,19 +269,23 @@ function App() {
       const getSeed = (num) => seedsArray[num - 1];
 
       cfpGames = [
+        // FIRST ROUND - Reordered to match the visual top-to-bottom layout
+        { id: 'p_r1_4', round: 1, name: 'First Round', detail: 'Dec. 20 • Campus Site', home: getSeed(8)?.id, away: getSeed(9)?.id },
         { id: 'p_r1_1', round: 1, name: 'First Round', detail: 'Dec. 19/20 • Campus Site', home: getSeed(5)?.id, away: getSeed(12)?.id },
         { id: 'p_r1_2', round: 1, name: 'First Round', detail: 'Dec. 20 • Campus Site', home: getSeed(6)?.id, away: getSeed(11)?.id },
         { id: 'p_r1_3', round: 1, name: 'First Round', detail: 'Dec. 20 • Campus Site', home: getSeed(7)?.id, away: getSeed(10)?.id },
-        { id: 'p_r1_4', round: 1, name: 'First Round', detail: 'Dec. 20 • Campus Site', home: getSeed(8)?.id, away: getSeed(9)?.id },
         
+        // QUARTERFINALS - Reordered to map exactly to the First Round games above
         { id: 'p_qf_1', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(1)?.id, away: results['p_r1_4'] || null },
         { id: 'p_qf_4', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(4)?.id, away: results['p_r1_1'] || null },
-        { id: 'p_qf_2', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(2)?.id, away: results['p_r1_3'] || null },
         { id: 'p_qf_3', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(3)?.id, away: results['p_r1_2'] || null },
+        { id: 'p_qf_2', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(2)?.id, away: results['p_r1_3'] || null },
         
+        // SEMIFINALS
         { id: 'p_sf_1', round: 3, name: 'Semifinal', detail: 'Jan. 8 • Fiesta Bowl', home: results['p_qf_1'] || null, away: results['p_qf_4'] || null },
-        { id: 'p_sf_2', round: 3, name: 'Semifinal', detail: 'Jan. 9 • Peach Bowl', home: results['p_qf_2'] || null, away: results['p_qf_3'] || null },
+        { id: 'p_sf_2', round: 3, name: 'Semifinal', detail: 'Jan. 9 • Peach Bowl', home: results['p_qf_3'] || null, away: results['p_qf_2'] || null },
         
+        // NATIONAL CHAMPIONSHIP
         { id: 'p_nc', round: 4, name: 'National Championship', detail: 'Jan. 19 • Miami, FL', home: results['p_sf_1'] || null, away: results['p_sf_2'] || null }
       ];
     }
