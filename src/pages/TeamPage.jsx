@@ -29,7 +29,6 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
     return { wins, losses };
   }, [schedule, results, teamId]);
 
-  // Combine regular schedule with dynamic Postseason games
   const teamGames = useMemo(() => {
     const regGames = schedule.filter(g => g.home === teamId || g.away === teamId);
     
@@ -37,10 +36,11 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
     if (playoffData && playoffData.games) {
       postGames = playoffData.games.filter(g => g.home === teamId || g.away === teamId).map(g => ({
         ...g,
-        date: g.isCCG ? 'CHAMPIONSHIP' : 'PLAYOFF',
+        date: g.isCCG ? 'CHAMPIONSHIP' : g.isBowl ? 'BOWL GAME' : 'PLAYOFF',
         location: g.detail,
-        isPlayoff: !g.isCCG,
-        isCCG: g.isCCG
+        isPlayoff: !g.isCCG && !g.isBowl,
+        isCCG: g.isCCG,
+        isBowl: g.isBowl
       }));
     }
     
@@ -48,8 +48,6 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
   }, [schedule, teamId, playoffData]);
 
   const confStyle = getConfStyles(team?.conf);
-  
-  // Only show the seed if the CFP bracket is actually unlocked and generated
   const playoffSeed = playoffData?.ccgsComplete ? playoffData?.seedMap[teamId] : null;
 
   return (
@@ -127,13 +125,13 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
             <div 
               key={game.id} 
               className={`bg-white border rounded-3xl p-4 md:p-6 flex flex-col md:flex-row items-center justify-between transform transition-all duration-300 hover:scale-[1.01] hover:shadow-lg border-l-[12px] 
-                ${game.isPlayoff ? 'border-slate-900 shadow-md' : game.isCCG ? 'border-[#25bee8] shadow-md' : 'border-gray-100 shadow-sm'}`} 
-              style={{ borderLeftColor: game.isPlayoff ? '#0f172a' : game.isCCG ? '#25bee8' : team?.color }}
+                ${game.isPlayoff ? 'border-slate-900 shadow-md' : game.isCCG ? 'border-[#25bee8] shadow-md' : game.isBowl ? 'border-[#f5ce42] shadow-md' : 'border-gray-100 shadow-sm'}`} 
+              style={{ borderLeftColor: game.isPlayoff ? '#0f172a' : game.isCCG ? '#25bee8' : game.isBowl ? '#f5ce42' : team?.color }}
             >
               <div className="flex flex-col text-center md:text-left w-full md:w-auto mb-4 md:mb-0">
                 <p className={`font-black text-[11px] uppercase mb-1 drop-shadow-sm flex items-center justify-center md:justify-start gap-1 
-                  ${game.isPlayoff ? 'text-slate-900' : game.isCCG ? 'text-[#25bee8]' : 'text-slate-400'}`}>
-                  {game.isPlayoff ? '🏆 CFP ' : game.isCCG ? '🏅 ' : ''} {game.name} • {game.location}
+                  ${game.isPlayoff ? 'text-slate-900' : game.isCCG ? 'text-[#25bee8]' : game.isBowl ? 'text-[#f5ce42]' : 'text-slate-400'}`}>
+                  {game.isPlayoff ? '🏆 CFP ' : game.isCCG ? '🏅 ' : game.isBowl ? '🎳 ' : ''} {game.name} {game.location}
                 </p>
                 
                 <h3 className="text-2xl md:text-3xl font-black uppercase text-slate-900 flex items-center justify-center md:justify-start gap-2 md:gap-3">
@@ -153,7 +151,7 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
                 <button 
                   onClick={() => opponent.id && onPick(game.id, teamId)} 
                   disabled={!opponent.id}
-                  className={`flex-1 md:flex-none px-8 py-3 rounded-xl text-xs font-black uppercase transition-all duration-300 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${userSelection === teamId ? 'text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`} 
+                  className={`cursor-pointer flex-1 md:flex-none px-8 py-3 rounded-xl text-xs font-black uppercase transition-all duration-300 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${userSelection === teamId ? 'text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`} 
                   style={userSelection === teamId ? { backgroundColor: team?.color, boxShadow: `0 4px 12px ${team?.color}40` } : {}}
                 >
                   Win
@@ -161,7 +159,7 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
                 <button 
                   onClick={() => opponent.id && onPick(game.id, opponentId)} 
                   disabled={!opponent.id}
-                  className={`flex-1 md:flex-none px-8 py-3 rounded-xl text-xs font-black uppercase transition-all duration-300 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${userSelection && userSelection !== teamId ? 'bg-slate-950 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`cursor-pointer flex-1 md:flex-none px-8 py-3 rounded-xl text-xs font-black uppercase transition-all duration-300 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${userSelection && userSelection !== teamId ? 'bg-slate-950 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                   Loss
                 </button>

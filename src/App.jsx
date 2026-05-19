@@ -21,7 +21,6 @@ function App() {
     return saved ? JSON.parse(saved) : {};
   });
 
-  // --- MODAL & EXPORT STATE ---
   const [showModal, setShowModal] = useState(false);
   const [importCode, setImportCode] = useState("");
   const [copyStatus, setCopyStatus] = useState("Copy Save Code");
@@ -37,36 +36,26 @@ function App() {
       
       if (typeof gameId === 'number') {
         Object.keys(newResults).forEach(key => {
-          if (key.startsWith('cc_') || key.startsWith('p_')) {
-            delete newResults[key];
-          }
+          if (key.startsWith('cc_') || key.startsWith('p_') || key.startsWith('b_')) delete newResults[key];
         });
       }
 
       if (typeof gameId === 'string' && gameId.startsWith('cc_')) {
         Object.keys(newResults).forEach(key => {
-          if (key.startsWith('p_')) {
-            delete newResults[key];
-          }
+          if (key.startsWith('p_') || key.startsWith('b_')) delete newResults[key];
         });
       }
 
       if (typeof gameId === 'string' && gameId.startsWith('p_r1_')) {
         Object.keys(newResults).forEach(key => {
-          if (key.startsWith('p_qf_') || key.startsWith('p_sf_') || key === 'p_nc') {
-            delete newResults[key];
-          }
+          if (key.startsWith('p_qf_') || key.startsWith('p_sf_') || key === 'p_nc') delete newResults[key];
         });
       }
-
       if (typeof gameId === 'string' && gameId.startsWith('p_qf_')) {
         Object.keys(newResults).forEach(key => {
-          if (key.startsWith('p_sf_') || key === 'p_nc') {
-            delete newResults[key];
-          }
+          if (key.startsWith('p_sf_') || key === 'p_nc') delete newResults[key];
         });
       }
-
       if (typeof gameId === 'string' && gameId.startsWith('p_sf_')) {
         delete newResults['p_nc'];
       }
@@ -79,9 +68,7 @@ function App() {
     const newResults = { ...results };
 
     Object.keys(newResults).forEach(key => {
-      if (key.startsWith('cc_') || key.startsWith('p_')) {
-        delete newResults[key];
-      }
+      if (key.startsWith('cc_') || key.startsWith('p_') || key.startsWith('b_')) delete newResults[key];
     });
 
     masterSchedule.forEach(game => {
@@ -103,35 +90,17 @@ function App() {
             const power2 = ['SEC', 'Big Ten'];
             const standardPower = ['ACC', 'Big 12'];
             let upsetBias = 1.0;
-
-            if (power2.includes(home.conf) || power2.includes(away.conf)) {
-              upsetBias = 0.7; 
-            } else if (!standardPower.includes(home.conf) && !standardPower.includes(away.conf)) {
-              upsetBias = 2.5; 
-            }
-
-            let dynamicUpsetThreshold = 0;
-            if (diff > 25) dynamicUpsetThreshold = 0.001; 
-            else if (diff > 10) dynamicUpsetThreshold = 0.02;
-            else if (diff > 7) dynamicUpsetThreshold = 0.08;
-            else dynamicUpsetThreshold = 0.20;
-
+            if (power2.includes(home.conf) || power2.includes(away.conf)) upsetBias = 0.7; 
+            else if (!standardPower.includes(home.conf) && !standardPower.includes(away.conf)) upsetBias = 2.5; 
+            let dynamicUpsetThreshold = diff > 25 ? 0.001 : diff > 10 ? 0.02 : diff > 7 ? 0.08 : 0.20;
             const finalThreshold = dynamicUpsetThreshold * upsetBias;
-            const roll = Math.random();
-
-            if (roll > finalThreshold) {
-              newResults[game.id] = homePower >= awayPower ? game.home : game.away;
-            } else {
-              newResults[game.id] = homePower >= awayPower ? game.away : game.home;
-            }
+            newResults[game.id] = Math.random() > finalThreshold ? (homePower >= awayPower ? game.home : game.away) : (homePower >= awayPower ? game.away : game.home);
             break;
           case 'underdog':
             newResults[game.id] = Math.random() < 0.7 ? (homePower < awayPower ? game.home : game.away) : (homePower >= awayPower ? game.home : game.away);
             break;
           case 'blueblood':
-            const hBias = (home.conf === 'SEC' || home.conf === 'Big Ten') ? 15 : 0;
-            const aBias = (away.conf === 'SEC' || away.conf === 'Big Ten') ? 15 : 0;
-            newResults[game.id] = (homePower + hBias) >= (awayPower + aBias) ? game.home : game.away;
+            newResults[game.id] = (homePower + (home.conf === 'SEC' || home.conf === 'Big Ten' ? 15 : 0)) >= (awayPower + (away.conf === 'SEC' || away.conf === 'Big Ten' ? 15 : 0)) ? game.home : game.away;
             break;
           case 'homefortress':
             newResults[game.id] = (homePower + 17) >= awayPower ? game.home : game.away;
@@ -148,14 +117,11 @@ function App() {
   };
 
   const resetAllPicks = () => {
-    if (window.confirm("Clear all your 2026 picks?")) setResults({});
+    if (window.confirm("Clear all your picks?")) setResults({});
   };
 
-  // --- IMPORT/EXPORT LOGIC ---
   const loadImportedResults = (importedResults) => {
-    if (window.confirm("This will overwrite your current season progress. Are you sure?")) {
-      setResults(importedResults);
-    }
+    if (window.confirm("This will overwrite your current season progress. Are you sure?")) setResults(importedResults);
   };
 
   const handleExportFile = () => {
@@ -173,9 +139,7 @@ function App() {
       navigator.clipboard.writeText(base64);
       setCopyStatus("Copied!");
       setTimeout(() => setCopyStatus("Copy Save Code"), 2000);
-    } catch (e) {
-      alert("Error generating code");
-    }
+    } catch (e) { alert("Error generating code"); }
   };
 
   const handleImportFile = (e) => {
@@ -184,12 +148,9 @@ function App() {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const json = JSON.parse(event.target.result);
-        loadImportedResults(json);
+        loadImportedResults(JSON.parse(event.target.result));
         setShowModal(false);
-      } catch (err) {
-        alert("Invalid save file! Make sure it is a valid .cfb file.");
-      }
+      } catch (err) { alert("Invalid save file! Make sure it is a valid .cfb file."); }
     };
     reader.readAsText(file);
     e.target.value = null; 
@@ -198,13 +159,10 @@ function App() {
   const handleImportCode = () => {
     try {
       if (!importCode) return;
-      const json = JSON.parse(atob(importCode));
-      loadImportedResults(json);
+      loadImportedResults(JSON.parse(atob(importCode)));
       setShowModal(false);
       setImportCode("");
-    } catch (err) {
-      alert("Invalid save code!");
-    }
+    } catch (err) { alert("Invalid save code!"); }
   };
 
   // --- POSTSEASON LOGIC ---
@@ -243,25 +201,10 @@ function App() {
 
     confs.forEach(conf => {
       const confTeams = stats.filter(t => t.conf === conf).sort((a, b) => b.confWins - a.confWins || b.wins - a.wins || b.rating - a.rating);
-      
       if (confTeams.length >= 2) {
-        const home = confTeams[0];
-        const away = confTeams[1];
         const gameId = `cc_${conf.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}`;
-        
-        ccGames.push({
-          id: gameId,
-          round: 0,
-          name: `${conf} Championship`,
-          detail: 'Dec. 5/6 • Neutral Site',
-          home: home.id,
-          away: away.id,
-          isCCG: true
-        });
-        
-        if (results[gameId]) {
-          confChamps.push(stats.find(t => t.id === results[gameId]));
-        }
+        ccGames.push({ id: gameId, round: 0, name: `${conf} Championship`, detail: 'Neutral Site', home: confTeams[0].id, away: confTeams[1].id, isCCG: true });
+        if (results[gameId]) confChamps.push(stats.find(t => t.id === results[gameId]));
       } else if (confTeams.length === 1) {
         confChamps.push(confTeams[0]);
       }
@@ -272,24 +215,18 @@ function App() {
     let seedsArray = [];
     let seedMap = {};
     let cfpGames = [];
+    let bowlGames = [];
 
     if (ccgsComplete) {
-      const getChamp = (confNames) => {
-        const eligible = confChamps.filter(c => confNames.includes(c.conf)).sort((a,b) => a.rank - b.rank);
-        return eligible[0];
-      };
-
+      const getChamp = (confNames) => confChamps.filter(c => confNames.includes(c.conf)).sort((a,b) => a.rank - b.rank)[0];
       const power4Champs = [getChamp(['ACC']), getChamp(['Big Ten']), getChamp(['Big 12']), getChamp(['SEC'])].filter(Boolean);
-      const g6Champs = confChamps.filter(c => !['ACC', 'Big Ten', 'Big 12', 'SEC', 'Independent'].includes(c.conf)).sort((a,b) => a.rank - b.rank);
-      const highestG6Champ = g6Champs[0];
+      const highestG6Champ = confChamps.filter(c => !['ACC', 'Big Ten', 'Big 12', 'SEC', 'Independent'].includes(c.conf)).sort((a,b) => a.rank - b.rank)[0];
 
       const autoQualifiers = [...power4Champs, highestG6Champ].filter(Boolean).sort((a,b) => a.rank - b.rank);
-      
       const top4Champs = autoQualifiers.slice(0, 4);
       const fifthChamp = autoQualifiers[4];
 
       let remaining = stats.filter(t => !top4Champs.find(c => c.id === t.id) && (!fifthChamp || t.id !== fifthChamp.id));
-      
       let atLarges = [];
       const nd = stats.find(t => t.id === 'nd');
       
@@ -301,31 +238,64 @@ function App() {
          atLarges = remaining.slice(0, 7);
       }
 
-      const next8 = [...(fifthChamp ? [fifthChamp] : []), ...atLarges].sort((a, b) => a.rank - b.rank);
-      seedsArray = [...top4Champs, ...next8];
-      
+      seedsArray = [...top4Champs, ...[...(fifthChamp ? [fifthChamp] : []), ...atLarges].sort((a, b) => a.rank - b.rank)];
       seedsArray.forEach((t, i) => seedMap[t.id] = i + 1);
       const getSeed = (num) => seedsArray[num - 1];
 
       cfpGames = [
-        { id: 'p_r1_4', round: 1, name: 'First Round', detail: 'Dec. 20 • Campus Site', home: getSeed(8)?.id, away: getSeed(9)?.id },
-        { id: 'p_r1_1', round: 1, name: 'First Round', detail: 'Dec. 19/20 • Campus Site', home: getSeed(5)?.id, away: getSeed(12)?.id },
-        { id: 'p_r1_2', round: 1, name: 'First Round', detail: 'Dec. 20 • Campus Site', home: getSeed(6)?.id, away: getSeed(11)?.id },
-        { id: 'p_r1_3', round: 1, name: 'First Round', detail: 'Dec. 20 • Campus Site', home: getSeed(7)?.id, away: getSeed(10)?.id },
-        
-        { id: 'p_qf_1', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(1)?.id, away: results['p_r1_4'] || null },
-        { id: 'p_qf_4', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(4)?.id, away: results['p_r1_1'] || null },
-        { id: 'p_qf_3', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(3)?.id, away: results['p_r1_2'] || null },
-        { id: 'p_qf_2', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(2)?.id, away: results['p_r1_3'] || null },
-        
-        { id: 'p_sf_1', round: 3, name: 'Semifinal', detail: 'Jan. 8 • Fiesta Bowl', home: results['p_qf_1'] || null, away: results['p_qf_4'] || null },
-        { id: 'p_sf_2', round: 3, name: 'Semifinal', detail: 'Jan. 9 • Peach Bowl', home: results['p_qf_3'] || null, away: results['p_qf_2'] || null },
-        
-        { id: 'p_nc', round: 4, name: 'National Championship', detail: 'Jan. 19 • Miami, FL', home: results['p_sf_1'] || null, away: results['p_sf_2'] || null }
+        { id: 'p_r1_4', round: 1, name: 'First Round', detail: 'Campus Site', home: getSeed(8)?.id, away: getSeed(9)?.id },
+        { id: 'p_r1_1', round: 1, name: 'First Round', detail: 'Campus Site', home: getSeed(5)?.id, away: getSeed(12)?.id },
+        { id: 'p_r1_2', round: 1, name: 'First Round', detail: 'Campus Site', home: getSeed(6)?.id, away: getSeed(11)?.id },
+        { id: 'p_r1_3', round: 1, name: 'First Round', detail: 'Campus Site', home: getSeed(7)?.id, away: getSeed(10)?.id },
+        { id: 'p_qf_1', round: 2, name: 'Quarterfinal', detail: 'Bowl Game', home: getSeed(1)?.id, away: results['p_r1_4'] || null },
+        { id: 'p_qf_4', round: 2, name: 'Quarterfinal', detail: 'Bowl Game', home: getSeed(4)?.id, away: results['p_r1_1'] || null },
+        { id: 'p_qf_3', round: 2, name: 'Quarterfinal', detail: 'Bowl Game', home: getSeed(3)?.id, away: results['p_r1_2'] || null },
+        { id: 'p_qf_2', round: 2, name: 'Quarterfinal', detail: 'Bowl Game', home: getSeed(2)?.id, away: results['p_r1_3'] || null },
+        { id: 'p_sf_1', round: 3, name: 'Semifinal', detail: 'Bowl Game', home: results['p_qf_1'] || null, away: results['p_qf_4'] || null },
+        { id: 'p_sf_2', round: 3, name: 'Semifinal', detail: 'Bowl Game', home: results['p_qf_3'] || null, away: results['p_qf_2'] || null },
+        { id: 'p_nc', round: 4, name: 'National Championship', detail: 'Neutral Site', home: results['p_sf_1'] || null, away: results['p_sf_2'] || null }
       ];
+
+      const eligible = stats.filter(t => t.wins >= 6 && !seedsArray.find(s => s.id === t.id)).sort((a, b) => a.rank - b.rank);
+      const assignedBowls = new Set();
+      const getBowlTeam = (confs) => {
+        for (const conf of confs) {
+          const team = eligible.find(t => t.conf === conf && !assignedBowls.has(t.id));
+          if (team) { assignedBowls.add(team.id); return team; }
+        }
+        const fallback = eligible.find(t => !assignedBowls.has(t.id));
+        if (fallback) { assignedBowls.add(fallback.id); return fallback; }
+        return null;
+      };
+
+      const potentialBowls = [
+        { id: 'b_citrus', name: 'Citrus Bowl', detail: 'Orlando, Florida', home: getBowlTeam(['SEC']), away: getBowlTeam(['Big Ten', 'ACC']) },
+        { id: 'b_reliaquest', name: 'ReliaQuest Bowl', detail: 'Tampa, Florida', home: getBowlTeam(['SEC']), away: getBowlTeam(['Big Ten', 'ACC']) },
+        { id: 'b_poptarts', name: 'Pop-Tarts Bowl', detail: 'Orlando, Florida', home: getBowlTeam(['ACC']), away: getBowlTeam(['Big 12']) },
+        { id: 'b_alamo', name: 'Alamo Bowl', detail: 'San Antonio, Texas', home: getBowlTeam(['Big 12']), away: getBowlTeam(['Pac-12', 'SEC']) },
+        { id: 'b_gator', name: 'Gator Bowl', detail: 'Jacksonville, Florida', home: getBowlTeam(['SEC']), away: getBowlTeam(['ACC']) },
+        { id: 'b_texas', name: 'Texas Bowl', detail: 'Houston, Texas', home: getBowlTeam(['Big 12']), away: getBowlTeam(['SEC']) },
+        { id: 'b_musiccity', name: 'Music City Bowl', detail: 'Nashville, Tennessee', home: getBowlTeam(['SEC']), away: getBowlTeam(['Big Ten']) },
+        { id: 'b_lasvegas', name: 'Las Vegas Bowl', detail: 'Las Vegas, Nevada', home: getBowlTeam(['SEC']), away: getBowlTeam(['Pac-12', 'Big Ten']) },
+        { id: 'b_mayo', name: "Duke's Mayo Bowl", detail: 'Charlotte, North Carolina', home: getBowlTeam(['ACC']), away: getBowlTeam(['Big Ten']) },
+        { id: 'b_holiday', name: 'Holiday Bowl', detail: 'San Diego, California', home: getBowlTeam(['ACC']), away: getBowlTeam(['Pac-12', 'Big Ten']) },
+        { id: 'b_liberty', name: 'Liberty Bowl', detail: 'Memphis, Tennessee', home: getBowlTeam(['Big 12']), away: getBowlTeam(['SEC']) },
+        { id: 'b_sun', name: 'Sun Bowl', detail: 'El Paso, Texas', home: getBowlTeam(['ACC']), away: getBowlTeam(['Pac-12', 'Big Ten']) },
+        { id: 'b_pinstripe', name: 'Pinstripe Bowl', detail: 'Bronx, New York', home: getBowlTeam(['ACC']), away: getBowlTeam(['Big Ten']) },
+        { id: 'b_xbox', name: 'Xbox Bowl', detail: 'Frisco, Texas', home: getBowlTeam(['American']), away: getBowlTeam(['Big 12', 'ACC']) },
+        { id: 'b_fenway', name: 'Fenway Bowl', detail: 'Boston, Massachusetts', home: getBowlTeam(['ACC']), away: getBowlTeam(['American']) },
+        { id: 'b_gasparilla', name: 'Gasparilla Bowl', detail: 'Tampa, Florida', home: getBowlTeam(['SEC']), away: getBowlTeam(['American']) },
+        { id: 'b_armedforces', name: 'Armed Forces Bowl', detail: 'Fort Worth, Texas', home: getBowlTeam(['Big 12']), away: getBowlTeam(['American']) },
+        { id: 'b_puertorico', name: 'Puerto Rico Bowl', detail: 'Bayamón, Puerto Rico', home: getBowlTeam(['American']), away: getBowlTeam(['Independent', 'ACC']) },
+        { id: 'b_idaho', name: 'Famous Idaho Potato Bowl', detail: 'Boise, Idaho', home: getBowlTeam(['American']), away: getBowlTeam(['Big Ten', 'Big 12']) },
+      ];
+
+      bowlGames = potentialBowls
+        .filter(b => b.home && b.away)
+        .map(b => ({ ...b, home: b.home.id, away: b.away.id, round: 5, isBowl: true }));
     }
 
-    return { seeds: seedsArray, seedMap, games: [...ccGames, ...cfpGames], ccGames, ccgsComplete };
+    return { seeds: seedsArray, seedMap, games: [...ccGames, ...cfpGames, ...bowlGames], ccGames, cfpGames, bowlGames, ccgsComplete };
   }, [teams, masterSchedule, results]);
 
   return (
@@ -339,7 +309,6 @@ function App() {
                 CFB<span style={{ color: '#f5ce42' }}>ENGINE</span>
               </span>
             </Link>
-            
             <div className="flex items-center gap-6">
               <div className="hidden sm:flex gap-4 md:gap-6 text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">
                 <Link to="/" className="text-slate-500 hover:text-[#25bee8] transition-all">Poll</Link>
@@ -347,19 +316,11 @@ function App() {
                 <Link to="/teams" className="text-slate-500 hover:text-[#25bee8] transition-all">Teams</Link>
                 <Link to="/postseason" className="text-slate-500 hover:text-[#25bee8] transition-all">Postseason</Link>
               </div>
-              
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="cursor-pointer px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all bg-slate-900 text-white hover:bg-slate-800 shadow-sm flex items-center gap-2"
-                >
-                  <span className="hidden md:inline">Share / Save</span>
-                  <span className="md:hidden">Save</span>
+                <button onClick={() => setShowModal(true)} className="cursor-pointer px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all bg-slate-900 text-white hover:bg-slate-800 shadow-sm flex items-center gap-2">
+                  <span className="hidden md:inline">Share / Save</span><span className="md:hidden">Save</span>
                 </button>
-                <button
-                  onClick={resetAllPicks}
-                  className="cursor-pointer px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-600 hover:border-red-100"
-                >
+                <button onClick={resetAllPicks} className="cursor-pointer px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-600 hover:border-red-100">
                   Reset
                 </button>
               </div>
@@ -377,72 +338,40 @@ function App() {
           </Routes>
         </main>
 
-        {/* GLOBAL SHARE / SAVE MODAL */}
         {showModal && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl relative">
               <button onClick={() => setShowModal(false)} className="cursor-pointer absolute top-5 right-5 text-slate-400 hover:text-slate-900 font-black text-xl">✕</button>
               <h2 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 mb-6">Share & Save</h2>
-
               <div className="space-y-6">
-                
-                {/* EXPORT SECTION */}
                 <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
                   <h3 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-[0.2em]">Export Data</h3>
-                  
                   <div className="mb-3">
                     <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Save File Name</label>
                     <div className="flex items-center mt-1">
-                      <input 
-                        type="text" 
-                        value={exportName}
-                        onChange={(e) => setExportName(e.target.value)}
-                        className="flex-1 border-2 border-slate-200 rounded-l-xl px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-[#25bee8] transition-colors"
-                      />
+                      <input type="text" value={exportName} onChange={(e) => setExportName(e.target.value)} className="flex-1 border-2 border-slate-200 rounded-l-xl px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-[#25bee8] transition-colors" />
                       <span className="bg-slate-200 text-slate-500 font-bold text-sm px-3 py-2.5 border-y-2 border-r-2 border-slate-200 rounded-r-xl">.cfb</span>
                     </div>
                   </div>
-
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button onClick={handleExportFile} className="cursor-pointer bg-[#25bee8] text-white p-3 rounded-xl font-bold uppercase text-xs hover:bg-sky-500 transition-colors shadow-sm">
-                      💾 Download File
-                    </button>
-                    <button onClick={handleExportCode} className="cursor-pointer bg-slate-900 text-white p-3 rounded-xl font-bold uppercase text-xs hover:bg-slate-800 transition-colors shadow-sm truncate">
-                      📋 {copyStatus}
-                    </button>
+                    <button onClick={handleExportFile} className="cursor-pointer bg-[#25bee8] text-white p-3 rounded-xl font-bold uppercase text-xs hover:bg-sky-500 transition-colors shadow-sm">💾 Download File</button>
+                    <button onClick={handleExportCode} className="cursor-pointer bg-slate-900 text-white p-3 rounded-xl font-bold uppercase text-xs hover:bg-slate-800 transition-colors shadow-sm truncate">📋 {copyStatus}</button>
                   </div>
                 </div>
-
-                {/* IMPORT SECTION */}
                 <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
                   <h3 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-[0.2em]">Load Progress</h3>
                   <div className="space-y-3">
-                    
-                    {/* CHANGED STRICTLY TO accept=".cfb" */}
                     <label className="cursor-pointer flex w-full bg-white border-2 border-dashed border-slate-300 text-slate-600 justify-center p-4 rounded-xl font-bold uppercase text-xs hover:border-[#25bee8] hover:text-[#25bee8] transition-all">
                       📂 Upload .cfb Save File
                       <input type="file" accept=".cfb" className="hidden" onChange={handleImportFile} />
                     </label>
-
-                    <div className="flex gap-2 items-center">
-                      <span className="text-xs font-bold text-slate-400 uppercase w-full text-center">-- OR --</span>
-                    </div>
-
+                    <div className="flex gap-2 items-center"><span className="text-xs font-bold text-slate-400 uppercase w-full text-center">-- OR --</span></div>
                     <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        placeholder="Paste Save Code here..." 
-                        value={importCode}
-                        onChange={(e) => setImportCode(e.target.value)}
-                        className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-2 text-sm font-medium focus:border-[#25bee8] outline-none transition-colors"
-                      />
-                      <button onClick={handleImportCode} className="cursor-pointer bg-slate-900 text-white px-6 py-2 rounded-xl font-bold uppercase text-xs hover:bg-slate-800 transition-colors shadow-sm">
-                        Load
-                      </button>
+                      <input type="text" placeholder="Paste Save Code here..." value={importCode} onChange={(e) => setImportCode(e.target.value)} className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-2 text-sm font-medium focus:border-[#25bee8] outline-none transition-colors" />
+                      <button onClick={handleImportCode} className="cursor-pointer bg-slate-900 text-white px-6 py-2 rounded-xl font-bold uppercase text-xs hover:bg-slate-800 transition-colors shadow-sm">Load</button>
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
