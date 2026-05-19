@@ -21,6 +21,12 @@ function App() {
     return saved ? JSON.parse(saved) : {};
   });
 
+  // --- MODAL & EXPORT STATE ---
+  const [showModal, setShowModal] = useState(false);
+  const [importCode, setImportCode] = useState("");
+  const [copyStatus, setCopyStatus] = useState("Copy Save Code");
+  const [exportName, setExportName] = useState("my-2026-season");
+
   useEffect(() => {
     localStorage.setItem('cfb_picks_2026', JSON.stringify(results));
   }, [results]);
@@ -29,12 +35,6 @@ function App() {
     setResults(prev => {
       const newResults = { ...prev, [gameId]: winnerId };
       
-      /**
-       * 1. REGULAR SEASON SAFETY
-       * If a user changes a regular season game (ID is a number),
-       * we MUST wipe all conference championships and all playoff games.
-       * This forces the user to re-confirm champions based on new standings.
-       */
       if (typeof gameId === 'number') {
         Object.keys(newResults).forEach(key => {
           if (key.startsWith('cc_') || key.startsWith('p_')) {
@@ -43,11 +43,6 @@ function App() {
         });
       }
 
-      /**
-       * 2. CONFERENCE CHAMPIONSHIP SAFETY
-       * If a user changes a Conference Champion (ID starts with 'cc_'),
-       * we MUST wipe all playoff games because the seeds/automatic bids changed.
-       */
       if (typeof gameId === 'string' && gameId.startsWith('cc_')) {
         Object.keys(newResults).forEach(key => {
           if (key.startsWith('p_')) {
@@ -56,11 +51,6 @@ function App() {
         });
       }
 
-      /**
-       * 3. PLAYOFF ROUND-BY-ROUND SAFETY
-       * Prevents the bracket from breaking if an early-round pick is changed.
-       */
-      // If Round 1 changes -> wipe Quarterfinals, Semis, and Finals
       if (typeof gameId === 'string' && gameId.startsWith('p_r1_')) {
         Object.keys(newResults).forEach(key => {
           if (key.startsWith('p_qf_') || key.startsWith('p_sf_') || key === 'p_nc') {
@@ -69,7 +59,6 @@ function App() {
         });
       }
 
-      // If Quarterfinal changes -> wipe Semis and Finals
       if (typeof gameId === 'string' && gameId.startsWith('p_qf_')) {
         Object.keys(newResults).forEach(key => {
           if (key.startsWith('p_sf_') || key === 'p_nc') {
@@ -78,7 +67,6 @@ function App() {
         });
       }
 
-      // If Semifinal changes -> wipe Finals
       if (typeof gameId === 'string' && gameId.startsWith('p_sf_')) {
         delete newResults['p_nc'];
       }
@@ -90,8 +78,6 @@ function App() {
   const runSimulation = (mode) => {
     const newResults = { ...results };
 
-    // Before simulating, clear existing postseason picks to ensure 
-    // the new simulation doesn't conflict with old data.
     Object.keys(newResults).forEach(key => {
       if (key.startsWith('cc_') || key.startsWith('p_')) {
         delete newResults[key];
@@ -163,6 +149,62 @@ function App() {
 
   const resetAllPicks = () => {
     if (window.confirm("Clear all your 2026 picks?")) setResults({});
+  };
+
+  // --- IMPORT/EXPORT LOGIC ---
+  const loadImportedResults = (importedResults) => {
+    if (window.confirm("This will overwrite your current season progress. Are you sure?")) {
+      setResults(importedResults);
+    }
+  };
+
+  const handleExportFile = () => {
+    const fileName = exportName.trim() ? exportName.trim() : "my-season";
+    const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(JSON.stringify(results));
+    const link = document.createElement("a");
+    link.href = dataStr;
+    link.download = `${fileName}.cfb`; 
+    link.click();
+  };
+
+  const handleExportCode = () => {
+    try {
+      const base64 = btoa(JSON.stringify(results));
+      navigator.clipboard.writeText(base64);
+      setCopyStatus("Copied!");
+      setTimeout(() => setCopyStatus("Copy Save Code"), 2000);
+    } catch (e) {
+      alert("Error generating code");
+    }
+  };
+
+  const handleImportFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target.result);
+        loadImportedResults(json);
+        setShowModal(false);
+      } catch (err) {
+        alert("Invalid save file! Make sure it is a valid .cfb file.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = null; 
+  };
+
+  const handleImportCode = () => {
+    try {
+      if (!importCode) return;
+      const json = JSON.parse(atob(importCode));
+      loadImportedResults(json);
+      setShowModal(false);
+      setImportCode("");
+    } catch (err) {
+      alert("Invalid save code!");
+    }
   };
 
   // --- POSTSEASON LOGIC ---
@@ -248,13 +290,10 @@ function App() {
 
       let remaining = stats.filter(t => !top4Champs.find(c => c.id === t.id) && (!fifthChamp || t.id !== fifthChamp.id));
       
-      // === THE NOTRE DAME RULE ===
-      // "The University of Notre Dame will be included in the playoff if it is ranked among the top 12 teams in the final rankings."
       let atLarges = [];
       const nd = stats.find(t => t.id === 'nd');
       
       if (nd && nd.rank <= 12 && !remaining.slice(0, 7).find(t => t.id === 'nd')) {
-         // Guarantee ND a spot in the 7 at-larges if they are Top 12.
          atLarges.push(nd);
          remaining = remaining.filter(t => t.id !== 'nd');
          atLarges = [...atLarges, ...remaining.slice(0, 6)];
@@ -269,23 +308,19 @@ function App() {
       const getSeed = (num) => seedsArray[num - 1];
 
       cfpGames = [
-        // FIRST ROUND - Reordered to match the visual top-to-bottom layout
         { id: 'p_r1_4', round: 1, name: 'First Round', detail: 'Dec. 20 • Campus Site', home: getSeed(8)?.id, away: getSeed(9)?.id },
         { id: 'p_r1_1', round: 1, name: 'First Round', detail: 'Dec. 19/20 • Campus Site', home: getSeed(5)?.id, away: getSeed(12)?.id },
         { id: 'p_r1_2', round: 1, name: 'First Round', detail: 'Dec. 20 • Campus Site', home: getSeed(6)?.id, away: getSeed(11)?.id },
         { id: 'p_r1_3', round: 1, name: 'First Round', detail: 'Dec. 20 • Campus Site', home: getSeed(7)?.id, away: getSeed(10)?.id },
         
-        // QUARTERFINALS - Reordered to map exactly to the First Round games above
         { id: 'p_qf_1', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(1)?.id, away: results['p_r1_4'] || null },
         { id: 'p_qf_4', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(4)?.id, away: results['p_r1_1'] || null },
         { id: 'p_qf_3', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(3)?.id, away: results['p_r1_2'] || null },
         { id: 'p_qf_2', round: 2, name: 'Quarterfinal', detail: 'Dec. 31/Jan. 1 • Bowl Game', home: getSeed(2)?.id, away: results['p_r1_3'] || null },
         
-        // SEMIFINALS
         { id: 'p_sf_1', round: 3, name: 'Semifinal', detail: 'Jan. 8 • Fiesta Bowl', home: results['p_qf_1'] || null, away: results['p_qf_4'] || null },
         { id: 'p_sf_2', round: 3, name: 'Semifinal', detail: 'Jan. 9 • Peach Bowl', home: results['p_qf_3'] || null, away: results['p_qf_2'] || null },
         
-        // NATIONAL CHAMPIONSHIP
         { id: 'p_nc', round: 4, name: 'National Championship', detail: 'Jan. 19 • Miami, FL', home: results['p_sf_1'] || null, away: results['p_sf_2'] || null }
       ];
     }
@@ -304,22 +339,34 @@ function App() {
                 CFB<span style={{ color: '#f5ce42' }}>ENGINE</span>
               </span>
             </Link>
+            
             <div className="flex items-center gap-6">
-              <div className="flex gap-4 md:gap-6 text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">
+              <div className="hidden sm:flex gap-4 md:gap-6 text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">
                 <Link to="/" className="text-slate-500 hover:text-[#25bee8] transition-all">Poll</Link>
                 <Link to="/standings" className="text-slate-500 hover:text-[#25bee8] transition-all">Standings</Link>
                 <Link to="/teams" className="text-slate-500 hover:text-[#25bee8] transition-all">Teams</Link>
                 <Link to="/postseason" className="text-slate-500 hover:text-[#25bee8] transition-all">Postseason</Link>
               </div>
-              <button
-                onClick={resetAllPicks}
-                className="hidden md:block px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-600 hover:border-red-100"
-              >
-                Reset
-              </button>
+              
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="cursor-pointer px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all bg-slate-900 text-white hover:bg-slate-800 shadow-sm flex items-center gap-2"
+                >
+                  <span className="hidden md:inline">Share / Save</span>
+                  <span className="md:hidden">Save</span>
+                </button>
+                <button
+                  onClick={resetAllPicks}
+                  className="cursor-pointer px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-600 hover:border-red-100"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
           </div>
         </nav>
+        
         <main>
           <Routes>
             <Route path="/" element={<Home teams={teams} schedule={masterSchedule} results={results} />} />
@@ -329,6 +376,77 @@ function App() {
             <Route path="/team/:teamId" element={<TeamPage teams={teams} schedule={masterSchedule} results={results} onPick={handlePick} playoffData={playoffData} />} />
           </Routes>
         </main>
+
+        {/* GLOBAL SHARE / SAVE MODAL */}
+        {showModal && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl relative">
+              <button onClick={() => setShowModal(false)} className="cursor-pointer absolute top-5 right-5 text-slate-400 hover:text-slate-900 font-black text-xl">✕</button>
+              <h2 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 mb-6">Share & Save</h2>
+
+              <div className="space-y-6">
+                
+                {/* EXPORT SECTION */}
+                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                  <h3 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-[0.2em]">Export Data</h3>
+                  
+                  <div className="mb-3">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Save File Name</label>
+                    <div className="flex items-center mt-1">
+                      <input 
+                        type="text" 
+                        value={exportName}
+                        onChange={(e) => setExportName(e.target.value)}
+                        className="flex-1 border-2 border-slate-200 rounded-l-xl px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-[#25bee8] transition-colors"
+                      />
+                      <span className="bg-slate-200 text-slate-500 font-bold text-sm px-3 py-2.5 border-y-2 border-r-2 border-slate-200 rounded-r-xl">.cfb</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button onClick={handleExportFile} className="cursor-pointer bg-[#25bee8] text-white p-3 rounded-xl font-bold uppercase text-xs hover:bg-sky-500 transition-colors shadow-sm">
+                      💾 Download File
+                    </button>
+                    <button onClick={handleExportCode} className="cursor-pointer bg-slate-900 text-white p-3 rounded-xl font-bold uppercase text-xs hover:bg-slate-800 transition-colors shadow-sm truncate">
+                      📋 {copyStatus}
+                    </button>
+                  </div>
+                </div>
+
+                {/* IMPORT SECTION */}
+                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                  <h3 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-[0.2em]">Load Progress</h3>
+                  <div className="space-y-3">
+                    
+                    {/* CHANGED STRICTLY TO accept=".cfb" */}
+                    <label className="cursor-pointer flex w-full bg-white border-2 border-dashed border-slate-300 text-slate-600 justify-center p-4 rounded-xl font-bold uppercase text-xs hover:border-[#25bee8] hover:text-[#25bee8] transition-all">
+                      📂 Upload .cfb Save File
+                      <input type="file" accept=".cfb" className="hidden" onChange={handleImportFile} />
+                    </label>
+
+                    <div className="flex gap-2 items-center">
+                      <span className="text-xs font-bold text-slate-400 uppercase w-full text-center">-- OR --</span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        placeholder="Paste Save Code here..." 
+                        value={importCode}
+                        onChange={(e) => setImportCode(e.target.value)}
+                        className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-2 text-sm font-medium focus:border-[#25bee8] outline-none transition-colors"
+                      />
+                      <button onClick={handleImportCode} className="cursor-pointer bg-slate-900 text-white px-6 py-2 rounded-xl font-bold uppercase text-xs hover:bg-slate-800 transition-colors shadow-sm">
+                        Load
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Router>
   );

@@ -6,10 +6,7 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
   const getTeamInfo = (teamId) => {
     if (!teamId) return { name: 'TBD', logo: null, seed: '-' };
     const team = teams.find(t => t.id === teamId);
-    return { 
-      ...team, 
-      seed: seedMap[teamId] || '-' 
-    };
+    return { ...team, seed: seedMap[teamId] || '-' };
   };
 
   const GameCard = ({ gameId, className }) => {
@@ -21,16 +18,15 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
     const winner = results[game.id];
 
     return (
-      <div className={`bg-white border-2 border-slate-100 rounded-[1.5rem] p-3 shadow-md w-full hover:shadow-xl transition-all ${className}`}>
+      <div className={`bg-white border-2 border-slate-100 rounded-[1.5rem] p-3 shadow-md w-full transition-all ${className}`}>
         <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 text-center leading-tight">
           <span className={`block ${game.isCCG ? 'text-slate-900' : 'text-[#25bee8]'}`}>{game.name}</span>
           {game.detail}
         </div>
-        
         <div className="space-y-1">
             <button 
                 onClick={() => game.away && game.home && onPick(game.id, game.away)}
-                className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all border ${winner === game.away ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-gray-50 border-transparent hover:border-slate-300'}`}
+                className={`cursor-pointer w-full flex items-center justify-between p-2.5 rounded-xl transition-all border ${winner === game.away ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-gray-50 border-transparent hover:border-slate-300'}`}
             >
             <div className="flex items-center gap-3">
                 {!game.isCCG && <span className={`text-[10px] font-black w-4 text-left ${winner === game.away ? 'text-[#25bee8]' : 'text-slate-400'}`}>{away.seed !== '-' ? away.seed : ''}</span>}
@@ -42,7 +38,7 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
 
             <button 
                 onClick={() => game.away && game.home && onPick(game.id, game.home)}
-                className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all border ${winner === game.home ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-gray-50 border-transparent hover:border-slate-300'}`}
+                className={`cursor-pointer w-full flex items-center justify-between p-2.5 rounded-xl transition-all border ${winner === game.home ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-gray-50 border-transparent hover:border-slate-300'}`}
             >
             <div className="flex items-center gap-3">
                 {!game.isCCG && <span className={`text-[10px] font-black w-4 text-left ${winner === game.home ? 'text-[#25bee8]' : 'text-slate-400'}`}>{home.seed !== '-' ? home.seed : ''}</span>}
@@ -58,15 +54,21 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
-      <div className="bg-white py-12 px-6 text-center shadow-sm border-b border-gray-200">
-        <h1 className="text-5xl md:text-6xl font-black italic uppercase tracking-tighter leading-none text-slate-900">
-          <span className="text-[#25bee8]">THE</span> POSTSEASON
-        </h1>
-        <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-[10px] mt-4">Championship Week & 12-Team CFP Format</p>
+      
+      {/* THEMATIC HEADER (Matching the Home Page) */}
+      <div className="bg-white border-b border-gray-200 py-16 px-6 text-center shadow-sm relative overflow-hidden">
+        <div className="relative z-10">
+          <div className="px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.4em] mb-4 inline-block shadow-sm border" style={{ color: '#25bee8', borderColor: '#25bee8' }}>
+            Championship Week
+          </div>
+          <h1 className="text-7xl md:text-9xl font-black italic uppercase tracking-tighter leading-none text-slate-900">
+            <span style={{ color: '#25bee8' }}>THE</span> <span style={{ color: '#f5ce42' }}>PLAYOFF</span>
+          </h1>
+          <p className="text-slate-500 font-bold uppercase tracking-[0.5em] text-xs mt-6">12-Team CFP Format</p>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-12">
-        
         {/* CONFERENCE CHAMPIONSHIPS */}
         <div className="mb-16">
             <div className="flex items-center justify-between border-b-2 border-slate-200 mb-6 pb-2">
@@ -85,34 +87,26 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
         
         {ccgsComplete ? (
             <div className="overflow-x-auto pb-8">
-                <div className="grid grid-cols-4 min-w-[1200px] gap-8">
-                    
-                    {/* ROUND 1 */}
+                <div className="grid grid-cols-4 min-w-[1200px] gap-8 bg-slate-50 p-4 rounded-3xl">
                     <div className="flex flex-col justify-between h-[750px] py-4">
-                        <GameCard gameId="p_r1_4" /> {/* 8v9 */}
-                        <GameCard gameId="p_r1_1" /> {/* 5v12 */}
-                        <GameCard gameId="p_r1_2" /> {/* 6v11 */}
-                        <GameCard gameId="p_r1_3" /> {/* 7v10 */}
+                        <GameCard gameId="p_r1_4" /> 
+                        <GameCard gameId="p_r1_1" /> 
+                        <GameCard gameId="p_r1_2" /> 
+                        <GameCard gameId="p_r1_3" /> 
                     </div>
-
-                    {/* QUARTERFINALS */}
                     <div className="flex flex-col justify-between h-[750px] py-4">
-                        <GameCard gameId="p_qf_1" /> {/* Seed 1 vs 8v9 */}
-                        <GameCard gameId="p_qf_4" /> {/* Seed 4 vs 5v12 */}
-                        <GameCard gameId="p_qf_3" /> {/* Seed 3 vs 6v11 */}
-                        <GameCard gameId="p_qf_2" /> {/* Seed 2 vs 7v10 */}
+                        <GameCard gameId="p_qf_1" /> 
+                        <GameCard gameId="p_qf_4" /> 
+                        <GameCard gameId="p_qf_3" /> 
+                        <GameCard gameId="p_qf_2" /> 
                     </div>
-
-                    {/* SEMIFINALS */}
                     <div className="flex flex-col justify-around h-[750px] py-16">
-                        <GameCard gameId="p_sf_1" className="border-[#25bee8]/50 shadow-[#25bee8]/10" /> {/* 1 vs 4 bracket */}
-                        <GameCard gameId="p_sf_2" className="border-[#25bee8]/50 shadow-[#25bee8]/10" /> {/* 2 vs 3 bracket */}
+                        <GameCard gameId="p_sf_1" className="border-[#25bee8]/50 shadow-[#25bee8]/10" /> 
+                        <GameCard gameId="p_sf_2" className="border-[#25bee8]/50 shadow-[#25bee8]/10" /> 
                     </div>
-
-                    {/* NATIONAL CHAMPIONSHIP */}
                     <div className="flex flex-col justify-center h-[750px]">
                         <div className="transform scale-110 origin-left">
-                            <GameCard gameId="p_nc" className="border-slate-900 shadow-xl" />
+                            <GameCard gameId="p_nc" className="border-slate-900 shadow-xl bg-white" />
                         </div>
                     </div>
                 </div>

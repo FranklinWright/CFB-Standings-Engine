@@ -122,7 +122,7 @@ export const teams = [
   logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/66.png", 
   description: "The Iowa State Cyclones boast one of the most loyal fanbases in the Big 12 in Ames. Their mascot is Cy the Cardinal, uniquely chosen since a cyclone is hard to costume." },
 { id:'ku', name:"Kansas", conf:"Big 12", color:"#0051BA", rating:76, 
-  logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/106.png", 
+  logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2305.png", 
   description: "The Kansas Jayhawks are building a resurgent football program in Lawrence. They are represented by their iconic mythical bird mascot, Big Jay." },
 { id:'ksu', name:"Kansas State", conf:"Big 12", color:"#512888", rating:79, 
   logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/82.png", 
