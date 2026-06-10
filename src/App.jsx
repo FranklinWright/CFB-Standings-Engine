@@ -22,6 +22,7 @@ function App() {
   });
 
   const [showModal, setShowModal] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [importCode, setImportCode] = useState("");
   const [copyStatus, setCopyStatus] = useState("Copy Save Code");
   const [exportName, setExportName] = useState("my-2026-season");
@@ -303,24 +304,45 @@ function App() {
       <ScrollToTop />
       <div className="min-h-screen bg-gray-50 font-sans text-slate-900 transition-colors duration-300">
         <nav className="bg-white border-b border-gray-200 p-4 sticky top-0 z-50 shadow-sm">
-          <div className="max-w-7xl mx-auto flex justify-between items-center">
-            <Link to="/" className="flex items-center gap-2 group">
-              <span className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic transition-colors" style={{ color: '#25bee8' }}>
-                CFB<span style={{ color: '#f5ce42' }}>ENGINE</span>
-              </span>
-            </Link>
-            <div className="flex items-center gap-6">
-              <div className="hidden sm:flex gap-4 md:gap-6 text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">
-                <Link to="/" className="text-slate-500 hover:text-[#25bee8] transition-all">Poll</Link>
-                <Link to="/standings" className="text-slate-500 hover:text-[#25bee8] transition-all">Standings</Link>
-                <Link to="/teams" className="text-slate-500 hover:text-[#25bee8] transition-all">Teams</Link>
-                <Link to="/postseason" className="text-slate-500 hover:text-[#25bee8] transition-all">Postseason</Link>
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:justify-between sm:items-center">
+            
+            {/* Top Row: Logo and Mobile Controls */}
+            <div className="flex justify-between items-center w-full sm:w-auto">
+              <Link to="/" className="flex items-center gap-2 group" onClick={() => setIsMobileMenuOpen(false)}>
+                <span className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic transition-colors" style={{ color: '#25bee8' }}>
+                  CFB<span style={{ color: '#f5ce42' }}>ENGINE</span>
+                </span>
+              </Link>
+              
+              {/* Hamburger Button - Only visible on mobile */}
+              <button 
+                className="sm:hidden flex flex-col justify-center items-center w-8 h-8 space-y-1.5 cursor-pointer"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label="Toggle menu"
+              >
+                <span className={`block w-6 h-0.5 bg-slate-900 transition-transform duration-300 ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+                <span className={`block w-6 h-0.5 bg-slate-900 transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
+                <span className={`block w-6 h-0.5 bg-slate-900 transition-transform duration-300 ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+              </button>
+            </div>
+
+            {/* Navigation and Buttons */}
+            <div className={`${isMobileMenuOpen ? 'flex' : 'hidden'} sm:flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 mt-4 sm:mt-0`}>
+              
+              {/* Navigation Links */}
+              <div className="flex flex-col sm:flex-row gap-4 md:gap-6 text-xs font-black uppercase tracking-[0.2em] w-full sm:w-auto">
+                <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="text-slate-500 hover:text-[#25bee8] transition-all py-2 sm:py-0 border-b border-gray-100 sm:border-none w-full">Poll</Link>
+                <Link to="/standings" onClick={() => setIsMobileMenuOpen(false)} className="text-slate-500 hover:text-[#25bee8] transition-all py-2 sm:py-0 border-b border-gray-100 sm:border-none w-full">Standings</Link>
+                <Link to="/teams" onClick={() => setIsMobileMenuOpen(false)} className="text-slate-500 hover:text-[#25bee8] transition-all py-2 sm:py-0 border-b border-gray-100 sm:border-none w-full">Teams</Link>
+                <Link to="/postseason" onClick={() => setIsMobileMenuOpen(false)} className="text-slate-500 hover:text-[#25bee8] transition-all py-2 sm:py-0 border-b border-gray-100 sm:border-none w-full">Postseason</Link>
               </div>
-              <div className="flex items-center gap-3">
-                <button onClick={() => setShowModal(true)} className="cursor-pointer px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all bg-slate-900 text-white hover:bg-slate-800 shadow-sm flex items-center gap-2">
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-start sm:justify-end mt-2 sm:mt-0">
+                <button onClick={() => { setShowModal(true); setIsMobileMenuOpen(false); }} className="cursor-pointer px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all bg-slate-900 text-white hover:bg-slate-800 shadow-sm flex items-center gap-2">
                   <span className="hidden md:inline">Share / Save</span><span className="md:hidden">Save</span>
                 </button>
-                <button onClick={resetAllPicks} className="cursor-pointer px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-600 hover:border-red-100">
+                <button onClick={() => { resetAllPicks(); setIsMobileMenuOpen(false); }} className="cursor-pointer px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-600 hover:border-red-100">
                   Reset
                 </button>
               </div>
