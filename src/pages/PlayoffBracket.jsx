@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file PlayoffBracket.jsx
  * @description Manages the postseason dashboard, including Conference Championship Games (CCG),
  * the 12-team College Football Playoff bracket, and non-playoff Bowl games.
@@ -89,14 +89,14 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
         <div className="space-y-1">
             <button 
                 onClick={() => game.away && game.home && onPick(game.id, game.away)}
-                className={`cursor-pointer w-full flex items-center justify-between p-2.5 rounded-xl transition-all border ${winner === game.away ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-gray-50 border-transparent hover:border-slate-300'}`}
+                className={`cursor-pointer w-full flex items-center justify-between p-2.5 rounded-xl transition-all border-2 ${winner === game.away ? 'bg-white border-slate-900 text-slate-900 shadow-md scale-[1.02] z-10 relative' : 'bg-gray-50 border-transparent text-slate-700 hover:border-slate-300'}`}
             >
             <div className="flex items-center gap-3">
                 {!game.isCCG && !game.isBowl && <span className={`text-[10px] font-black w-4 text-left ${winner === game.away ? 'text-[#25bee8]' : 'text-slate-400'}`}>{away.seed !== '-' ? away.seed : ''}</span>}
                 <img 
                     src={getLogoSrc(away.logo, away.id)} 
                     alt="" 
-                    onError={(e) => { e.target.src = '/favicon.ico'; }} 
+                    onError={(e) => { e.target.onerror = null; e.target.src = '/favicon.ico'; }} 
                     className="w-6 h-6 object-contain" 
                 />
                 <span className={`font-bold text-sm uppercase truncate ${!away.logo && 'ml-2'}`}>{away.name}</span>
@@ -106,14 +106,14 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
 
             <button 
                 onClick={() => game.away && game.home && onPick(game.id, game.home)}
-                className={`cursor-pointer w-full flex items-center justify-between p-2.5 rounded-xl transition-all border ${winner === game.home ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-gray-50 border-transparent hover:border-slate-300'}`}
+                className={`cursor-pointer w-full flex items-center justify-between p-2.5 rounded-xl transition-all border-2 ${winner === game.home ? 'bg-white border-slate-900 text-slate-900 shadow-md scale-[1.02] z-10 relative' : 'bg-gray-50 border-transparent text-slate-700 hover:border-slate-300'}`}
             >
             <div className="flex items-center gap-3">
                 {!game.isCCG && !game.isBowl && <span className={`text-[10px] font-black w-4 text-left ${winner === game.home ? 'text-[#25bee8]' : 'text-slate-400'}`}>{home.seed !== '-' ? home.seed : ''}</span>}
                 <img 
                     src={getLogoSrc(home.logo, home.id)} 
                     alt="" 
-                    onError={(e) => { e.target.src = '/favicon.ico'; }} 
+                    onError={(e) => { e.target.onerror = null; e.target.src = '/favicon.ico'; }} 
                     className="w-6 h-6 object-contain" 
                 />
                 <span className={`font-bold text-sm uppercase truncate ${!home.logo && 'ml-2'}`}>{home.name}</span>
@@ -186,31 +186,77 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
         {activeTab === 'cfp' && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {actualCcgsComplete ? (
-              <div className="overflow-x-auto pb-8">
-                  <div className="grid grid-cols-4 min-w-[1200px] gap-8 bg-white shadow-sm border border-slate-200 p-6 rounded-3xl">
-                      <div className="flex flex-col justify-between h-[750px] py-4">
-                          <GameCard gameId="p_r1_4" /> 
-                          <GameCard gameId="p_r1_1" /> 
-                          <GameCard gameId="p_r1_2" /> 
-                          <GameCard gameId="p_r1_3" /> 
-                      </div>
-                      <div className="flex flex-col justify-between h-[750px] py-4">
-                          <GameCard gameId="p_qf_1" /> 
-                          <GameCard gameId="p_qf_4" /> 
-                          <GameCard gameId="p_qf_3" /> 
-                          <GameCard gameId="p_qf_2" /> 
-                      </div>
-                      <div className="flex flex-col justify-around h-[750px] py-16">
-                          <GameCard gameId="p_sf_1" className="border-[#25bee8]/50 shadow-[#25bee8]/10" /> 
-                          <GameCard gameId="p_sf_2" className="border-[#25bee8]/50 shadow-[#25bee8]/10" /> 
-                      </div>
-                      <div className="flex flex-col justify-center h-[750px]">
-                          <div className="transform scale-110 origin-left">
-                              <GameCard gameId="p_nc" className="border-slate-900 shadow-2xl bg-white" />
-                          </div>
-                      </div>
-                  </div>
-              </div>
+              <>
+                {/* DESKTOP BRACKET (Hidden on mobile) */}
+                <div className="hidden lg:block overflow-x-auto pb-8">
+                    <div className="grid grid-cols-4 min-w-[1200px] gap-8 bg-white shadow-sm border border-slate-200 p-6 rounded-3xl">
+                        <div className="flex flex-col justify-between h-[750px] py-4">
+                            <GameCard gameId="p_r1_4" /> 
+                            <GameCard gameId="p_r1_1" /> 
+                            <GameCard gameId="p_r1_2" /> 
+                            <GameCard gameId="p_r1_3" /> 
+                        </div>
+                        <div className="flex flex-col justify-between h-[750px] py-4">
+                            <GameCard gameId="p_qf_1" /> 
+                            <GameCard gameId="p_qf_4" /> 
+                            <GameCard gameId="p_qf_3" /> 
+                            <GameCard gameId="p_qf_2" /> 
+                        </div>
+                        <div className="flex flex-col justify-around h-[750px] py-16">
+                            <GameCard gameId="p_sf_1" className="border-[#25bee8]/50 shadow-[#25bee8]/10" /> 
+                            <GameCard gameId="p_sf_2" className="border-[#25bee8]/50 shadow-[#25bee8]/10" /> 
+                        </div>
+                        <div className="flex flex-col justify-center h-[750px]">
+                            <div className="transform scale-110 origin-left">
+                                <GameCard gameId="p_nc" className="border-slate-900 shadow-2xl bg-white" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* MOBILE BRACKET (Stacked vertical layout, hidden on desktop) */}
+                <div className="lg:hidden flex flex-col gap-8 pb-8">
+                    {/* First Round */}
+                    <div className="bg-white shadow-sm border border-slate-200 p-4 rounded-3xl">
+                        <h3 className="text-lg font-black uppercase text-slate-900 mb-4 border-b border-slate-100 pb-2">First Round</h3>
+                        <div className="flex flex-col gap-4">
+                            <GameCard gameId="p_r1_4" /> 
+                            <GameCard gameId="p_r1_1" /> 
+                            <GameCard gameId="p_r1_2" /> 
+                            <GameCard gameId="p_r1_3" /> 
+                        </div>
+                    </div>
+                    
+                    {/* Quarterfinals */}
+                    <div className="bg-white shadow-sm border border-slate-200 p-4 rounded-3xl">
+                        <h3 className="text-lg font-black uppercase text-[#25bee8] mb-4 border-b border-slate-100 pb-2">Quarterfinals</h3>
+                        <div className="flex flex-col gap-4">
+                            <GameCard gameId="p_qf_1" /> 
+                            <GameCard gameId="p_qf_4" /> 
+                            <GameCard gameId="p_qf_3" /> 
+                            <GameCard gameId="p_qf_2" /> 
+                        </div>
+                    </div>
+
+                    {/* Semifinals */}
+                    <div className="bg-white shadow-sm border border-slate-200 p-4 rounded-3xl">
+                        <h3 className="text-lg font-black uppercase text-[#f5ce42] mb-4 border-b border-slate-100 pb-2">Semifinals</h3>
+                        <div className="flex flex-col gap-4">
+                            <GameCard gameId="p_sf_1" className="border-[#25bee8]/50 shadow-[#25bee8]/10" /> 
+                            <GameCard gameId="p_sf_2" className="border-[#25bee8]/50 shadow-[#25bee8]/10" /> 
+                        </div>
+                    </div>
+
+                    {/* National Championship */}
+                    <div className="bg-slate-900 shadow-xl border border-slate-800 p-5 rounded-3xl relative overflow-hidden">
+                        <div className="absolute inset-0 bg-black/20 pointer-events-none"></div>
+                        <h3 className="text-xl font-black uppercase text-white mb-4 border-b border-slate-700 pb-2 relative z-10 text-center">National Championship</h3>
+                        <div className="relative z-10">
+                            <GameCard gameId="p_nc" className="border-slate-900 shadow-2xl bg-white" />
+                        </div>
+                    </div>
+                </div>
+              </>
             ) : (
               <div className="bg-white border-2 border-dashed border-slate-300 rounded-3xl p-12 text-center max-w-3xl mx-auto mt-10 shadow-sm">
                   <span className="text-6xl mb-4 block">🔒</span>

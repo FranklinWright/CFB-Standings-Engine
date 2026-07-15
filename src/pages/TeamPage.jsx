@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file TeamPage.jsx
  * @description Renders the comprehensive team dashboard including 2026 schedule, 
  * historical trophy room, head-to-head comparison tool, and the "Whack-an-Opponent" minigame.
@@ -201,6 +201,7 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
             className={`absolute -right-16 -bottom-16 w-96 h-96 pointer-events-none transition-all duration-1000 
               ${isChampionTheme ? 'opacity-60 mix-blend-overlay scale-110 drop-shadow-[0_0_30px_rgba(255,255,255,0.5)]' : 'opacity-15 grayscale brightness-200'}`} 
             alt="" 
+            onError={(e) => { e.target.onerror = null; e.target.src = '/favicon.ico'; }}
           />
         )}
 
@@ -215,7 +216,12 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
                   title="Click to play Whack-an-Opponent!"
                   className={`bg-white rounded-full shadow-2xl flex items-center justify-center shrink-0 w-24 h-24 md:w-32 md:h-32 cursor-pointer transform transition-all hover:scale-110 hover:rotate-3 active:scale-95 group relative z-50 ${isChampionTheme ? 'ring-4 ring-yellow-200' : ''}`}
                 >
-                  <img src={team.logo} className="w-16 h-16 md:w-20 md:h-20 object-contain group-hover:animate-pulse" alt={`${team.name} Logo`} />
+                  <img 
+                    src={team.logo} 
+                    className="w-16 h-16 md:w-20 md:h-20 object-contain group-hover:animate-pulse" 
+                    alt={`${team.name} Logo`} 
+                    onError={(e) => { e.target.onerror = null; e.target.src = '/favicon.ico'; }}
+                  />
                   <div className="absolute -bottom-2 bg-slate-900 text-white text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg">Play</div>
                 </div>
               )}
@@ -314,13 +320,23 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
                   style={{ borderLeftColor: game.isPlayoff ? '#0f172a' : game.isCCG ? '#25bee8' : game.isBowl ? '#f5ce42' : (isChampionTheme ? '#eab308' : team?.color) }}
                 >
                   <div className="flex flex-col text-center md:text-left w-full md:w-auto mb-4 md:mb-0">
-                    <p className={`font-black text-[11px] uppercase mb-1 drop-shadow-sm flex items-center justify-center md:justify-start gap-1 
+                    <p className={`font-black text-[11px] uppercase mb-1 drop-shadow-sm flex items-center justify-center md:justify-start gap-1 flex-wrap
                       ${game.isPlayoff ? 'text-slate-900' : game.isCCG ? 'text-[#25bee8]' : game.isBowl ? 'text-[#f5ce42]' : isChampionTheme ? 'text-yellow-600' : 'text-slate-400'}`}>
-                      {game.isPlayoff ? '🏆 CFP ' : game.isCCG ? '🏅 ' : game.isBowl ? '🎳 ' : ''} {game.name} {game.location}
+                      {game.isPlayoff ? '🏆 CFP ' : game.isCCG ? '🏅 ' : game.isBowl ? '🎳 ' : ''} 
+                      {game.date && <span className="font-extrabold">{game.date}</span>}
+                      {game.location && <span className="font-extrabold"> at {game.location}</span>}
+                      {game.name && <span className="opacity-75"> • {game.name}</span>}
                     </p>
-                    <h3 className="text-2xl md:text-3xl font-black uppercase text-slate-900 flex items-center justify-center md:justify-start gap-2 md:gap-3">
+                    <h3 className="text-2xl md:text-3xl font-black uppercase text-slate-900 flex items-center justify-center md:justify-start gap-2 md:gap-3 mt-1">
                       <span className="text-slate-300 italic mr-1 text-lg md:text-xl">{isHome ? 'vs' : '@'}</span>
-                      {opponent.logo && <img src={opponent.logo} className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-sm" alt="" />}
+                      {opponent.logo && (
+                        <img 
+                          src={opponent.logo} 
+                          className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-sm" 
+                          alt="" 
+                          onError={(e) => { e.target.onerror = null; e.target.src = '/favicon.ico'; }}
+                        />
+                      )}
                       {opponent.id ? (
                         <Link to={`/team/${opponent.id}`} className="transition-colors duration-200 hover:opacity-70">{opponent.name}</Link>
                       ) : (
@@ -567,7 +583,14 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
                         </p>
                         <h3 className="text-2xl md:text-3xl font-black uppercase text-slate-900 flex items-center justify-center md:justify-start gap-3">
                           <span className="text-slate-300 italic mr-1 text-lg md:text-xl">vs</span>
-                          {opp.logo && <img src={opp.logo} className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-sm" alt="" />}
+                          {opp.logo && (
+                            <img 
+                              src={opp.logo} 
+                              className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-sm" 
+                              alt="" 
+                              onError={(e) => { e.target.onerror = null; e.target.src = '/favicon.ico'; }}
+                            />
+                          )}
                           {opp.id ? (
                             <Link to={`/team/${opp.id}`} className="transition-colors duration-200 hover:opacity-70 text-slate-800">{game.opponentName}</Link>
                           ) : (
@@ -644,7 +667,12 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
                     <div className="absolute -top-4 w-3/4 h-1.5 bg-gray-200 rounded-full overflow-hidden shadow-sm pointer-events-none">
                       <div className="h-full bg-red-500" style={{ animation: `shrinkBar ${enemy.lifespan}ms linear forwards` }} />
                     </div>
-                    <img src={enemy.opponent.logo} alt={enemy.opponent.name} className="w-[70%] h-[70%] object-contain pointer-events-none" />
+                    <img 
+                      src={enemy.opponent.logo} 
+                      alt={enemy.opponent.name} 
+                      className="w-[70%] h-[70%] object-contain pointer-events-none" 
+                      onError={(e) => { e.target.onerror = null; e.target.src = '/favicon.ico'; }}
+                    />
                   </div>
                 );
               })}
