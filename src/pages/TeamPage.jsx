@@ -1,31 +1,39 @@
+/**
+ * @file TeamPage.jsx
+ * @description Renders the comprehensive team dashboard including 2026 schedule, 
+ * historical trophy room, head-to-head comparison tool, and the "Whack-an-Opponent" minigame.
+ */
+
 import { useParams, Link } from 'react-router-dom';
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { historicalData } from '../history';
+import { historicalData } from '../data/history';
 
+/**
+ * TeamPage Component
+ * @param {Object} props
+ * @param {Array} props.teams - Full list of team objects
+ * @param {Array} props.schedule - 2026 season game objects
+ * @param {Object} props.results - Mapping of gameId to selected winnerId
+ * @param {Function} props.onPick - Handler for recording user game picks
+ * @param {Object} props.playoffData - Playoff structure, seeds, and completion state
+ */
 function TeamPage({ teams, schedule, results, onPick, playoffData }) {
   const { teamId } = useParams();
   const team = useMemo(() => teams.find(t => t.id === teamId), [teams, teamId]);
 
   // --- NAVIGATION STATE ---
-  const [activeTab, setActiveTab] = useState('season'); // 'season' or 'legacy'
+  const [activeTab, setActiveTab] = useState('season');
 
   // --- LEGACY STATES ---
-  const [selectedYear, setSelectedYear] = useState(''); // Empty by default
-  const [selectedDecade, setSelectedDecade] = useState(''); // Empty by default
+  const [selectedYear, setSelectedYear] = useState('');
+  const [selectedDecade, setSelectedDecade] = useState('');
   const [h2hOpponentId, setH2hOpponentId] = useState('');
-
-  // Search states for H2H
   const [h2hSearch, setH2hSearch] = useState('');
   const [isH2hDropdownOpen, setIsH2hDropdownOpen] = useState(false);
 
   // --- REWARD STATES ---
-  const [hasPerfectScore, setHasPerfectScore] = useState(() => {
-    return localStorage.getItem(`perfect_score_${teamId}`) === 'true';
-  });
-
-  const [isChampionTheme, setIsChampionTheme] = useState(() => {
-    return localStorage.getItem(`champion_theme_active_${teamId}`) !== 'false' && localStorage.getItem(`perfect_score_${teamId}`) === 'true';
-  });
+  const [hasPerfectScore, setHasPerfectScore] = useState(() => localStorage.getItem(`perfect_score_${teamId}`) === 'true');
+  const [isChampionTheme, setIsChampionTheme] = useState(() => localStorage.getItem(`champion_theme_active_${teamId}`) !== 'false' && localStorage.getItem(`perfect_score_${teamId}`) === 'true');
 
   const toggleTheme = () => {
     const newState = !isChampionTheme;
@@ -50,34 +58,18 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
     return styles[conf] || { bg: '#94a3b8', text: '#fff' };
   };
 
-  // Classify a HISTORICAL game into a label / icon / accent color.
-  // Mirrors the color language used by the 2026 season tab.
   const getGameTypeMeta = (game) => {
     const t = game.type || 'Regular';
-    if (t === 'National Championship') {
-      return { label: '🏆 National Championship', color: '#eab308', special: true };
-    }
-    if (t.startsWith('Playoff')) {
-      const round = t === 'Playoff' ? 'CFP Playoff' : t; // handles generic + named rounds
-      return { label: `🏆 ${round}`, color: '#0f172a', special: true };
-    }
-    if (t === 'CCG') {
-      return { label: '🏅 Conf Championship', color: '#25bee8', special: true };
-    }
-    if (t === 'Bowl') {
-      return { label: `🎳 ${game.bowlName || 'Bowl Game'}`, color: '#f5ce42', special: true };
-    }
+    if (t === 'National Championship') return { label: '🏆 National Championship', color: '#eab308', special: true };
+    if (t.startsWith('Playoff')) return { label: `🏆 ${t}`, color: '#0f172a', special: true };
+    if (t === 'CCG') return { label: '🏅 Conf Championship', color: '#25bee8', special: true };
+    if (t === 'Bowl') return { label: `🎳 ${game.bowlName || 'Bowl Game'}`, color: '#f5ce42', special: true };
     return { label: 'Regular Season', color: team?.color, special: false };
   };
 
   const teamStats = useMemo(() => {
     let wins = 0; let losses = 0;
-    schedule.forEach(game => {
-      if (results[game.id]) {
-        if (results[game.id] === teamId) wins++;
-        else if (game.home === teamId || game.away === teamId) losses++;
-      }
-    });
+    schedule.forEach(game => { if (results[game.id]) { if (results[game.id] === teamId) wins++; else if (game.home === teamId || game.away === teamId) losses++; } });
     return { wins, losses };
   }, [schedule, results, teamId]);
 
@@ -85,14 +77,7 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
     const regGames = schedule.filter(g => g.home === teamId || g.away === teamId);
     let postGames = [];
     if (playoffData && playoffData.games) {
-      postGames = playoffData.games.filter(g => g.home === teamId || g.away === teamId).map(g => ({
-        ...g,
-        date: g.isCCG ? 'CHAMPIONSHIP' : g.isBowl ? 'BOWL GAME' : 'PLAYOFF',
-        location: g.detail,
-        isPlayoff: !g.isCCG && !g.isBowl,
-        isCCG: g.isCCG,
-        isBowl: g.isBowl
-      }));
+      postGames = playoffData.games.filter(g => g.home === teamId || g.away === teamId).map(g => ({ ...g, date: g.isCCG ? 'CHAMPIONSHIP' : g.isBowl ? 'BOWL GAME' : 'PLAYOFF' }));
     }
     return [...regGames, ...postGames];
   }, [schedule, teamId, playoffData]);
@@ -100,82 +85,40 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
   const confStyle = getConfStyles(team?.conf);
   const playoffSeed = playoffData?.ccgsComplete ? playoffData?.seedMap[teamId] : null;
 
-  // --- LEGACY DATA CALCULATORS ---
   const historicalRecords = useMemo(() => {
-    let nattyYears = [];
-    let confYears = [];
-    let totalWins = 0;
-    let totalLosses = 0;
-
+    let nattyYears = [], confYears = [], totalWins = 0, totalLosses = 0;
     Object.values(historicalData || {}).forEach(yearData => {
       if (yearData.nationalChampion === teamId) nattyYears.push(yearData.year);
       if (Object.values(yearData.conferenceChampions || {}).includes(teamId)) confYears.push(yearData.year);
-      
       const teamSchedule = yearData.schedules[teamId];
-      if (teamSchedule) {
-        teamSchedule.forEach(game => {
-          if (game.result === 'W') totalWins++;
-          if (game.result === 'L') totalLosses++;
-        });
-      }
+      if (teamSchedule) teamSchedule.forEach(g => { if (g.result === 'W') totalWins++; if (g.result === 'L') totalLosses++; });
     });
-
     return { nattyYears: nattyYears.sort((a,b)=>b-a), confYears: confYears.sort((a,b)=>b-a), totalWins, totalLosses };
   }, [teamId]);
 
-  // Available seasons, grouped into decades for an easier picker.
-  const availableYears = useMemo(
-    () => Object.keys(historicalData || {}).map(Number).sort((a, b) => b - a),
-    []
-  );
-  const decades = useMemo(() => {
-    const set = new Set(availableYears.map(y => Math.floor(y / 10) * 10));
-    return Array.from(set).sort((a, b) => b - a);
-  }, [availableYears]);
-  const yearsInDecade = useMemo(
-    () => selectedDecade === ''
-      ? []
-      : availableYears.filter(y => Math.floor(y / 10) * 10 === Number(selectedDecade)),
-    [availableYears, selectedDecade]
-  );
+  const availableYears = useMemo(() => Object.keys(historicalData || {}).map(Number).sort((a, b) => b - a), []);
+  const decades = useMemo(() => Array.from(new Set(availableYears.map(y => Math.floor(y / 10) * 10))).sort((a, b) => b - a), [availableYears]);
+  const yearsInDecade = useMemo(() => selectedDecade === '' ? [] : availableYears.filter(y => Math.floor(y / 10) * 10 === Number(selectedDecade)), [availableYears, selectedDecade]);
 
   const h2hStats = useMemo(() => {
     if (!h2hOpponentId) return null;
     let w = 0, l = 0, pf = 0, pa = 0;
     let matchups = [];
-
     Object.values(historicalData || {}).forEach(yearData => {
       const teamSchedule = yearData.schedules[teamId];
-      if (teamSchedule) {
-        teamSchedule.forEach(game => {
+      if (teamSchedule) teamSchedule.forEach(game => {
           if (game.opponentId === h2hOpponentId) {
             matchups.push({ year: yearData.year, ...game });
-            if (game.result === 'W') w++;
-            if (game.result === 'L') l++;
-            pf += game.ourScore;
-            pa += game.theirScore;
+            if (game.result === 'W') w++; if (game.result === 'L') l++;
+            pf += game.ourScore; pa += game.theirScore;
           }
-        });
-      }
+      });
     });
-
-    return { 
-      wins: w, 
-      losses: l, 
-      avgPf: matchups.length > 0 ? (pf / matchups.length).toFixed(1) : 0, 
-      avgPa: matchups.length > 0 ? (pa / matchups.length).toFixed(1) : 0,
-      matchups: matchups.sort((a, b) => b.year - a.year) 
-    };
+    return { wins: w, losses: l, avgPf: matchups.length > 0 ? (pf / matchups.length).toFixed(1) : 0, avgPa: matchups.length > 0 ? (pa / matchups.length).toFixed(1) : 0, matchups: matchups.sort((a, b) => b.year - a.year) };
   }, [teamId, h2hOpponentId]);
 
-  const filteredH2hOpponents = useMemo(() => {
-    return teams.filter(t => 
-      t.id !== teamId && 
-      t.name.toLowerCase().includes(h2hSearch.toLowerCase())
-    );
-  }, [teams, teamId, h2hSearch]);
+  const filteredH2hOpponents = useMemo(() => teams.filter(t => t.id !== teamId && t.name.toLowerCase().includes(h2hSearch.toLowerCase())), [teams, teamId, h2hSearch]);
 
-  // --- MINIGAME STATE & LOGIC ---
   const [showMinigame, setShowMinigame] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [score, setScore] = useState(0);
@@ -183,71 +126,32 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
   const [timeLeft, setTimeLeft] = useState(0);
   const [activeEnemies, setActiveEnemies] = useState([]); 
   const timeoutRefs = useRef(new Map()); 
+  const [highScore, setHighScore] = useState(0);
 
-  const [highScore, setHighScore] = useState(() => {
-    const saved = localStorage.getItem(`whack_score_${teamId}`);
-    return saved ? parseInt(saved, 10) : 0;
-  });
-
-  // --- RE-SYNC PER-TEAM STATE ON NAVIGATION ---
-  // TeamPage stays mounted while react-router only swaps the :teamId param, so
-  // lazy useState initializers never re-run. Without this, the Perfect Champion
-  // badge / gold theme / high score from one team leak onto the next. Re-read
-  // this team's own localStorage and reset transient UI whenever teamId changes.
   useEffect(() => {
     const hasPerfect = localStorage.getItem(`perfect_score_${teamId}`) === 'true';
     setHasPerfectScore(hasPerfect);
-    setIsChampionTheme(
-      hasPerfect && localStorage.getItem(`champion_theme_active_${teamId}`) !== 'false'
-    );
+    setIsChampionTheme(hasPerfect && localStorage.getItem(`champion_theme_active_${teamId}`) !== 'false');
     const savedHi = localStorage.getItem(`whack_score_${teamId}`);
     setHighScore(savedHi ? parseInt(savedHi, 10) : 0);
-
-    // Start each team's page in a clean state.
-    setActiveTab('season');
-    setSelectedYear('');
-    setSelectedDecade('');
-    setH2hOpponentId('');
-    setH2hSearch('');
-    setIsH2hDropdownOpen(false);
-    setShowMinigame(false);
-    setIsPlaying(false);
-    setScore(0);
-    setMisses(0);
-    setActiveEnemies([]);
-    timeoutRefs.current.forEach(clearTimeout);
-    timeoutRefs.current.clear();
+    setActiveTab('season'); setSelectedYear(''); setSelectedDecade(''); setH2hOpponentId(''); setH2hSearch('');
+    timeoutRefs.current.forEach(clearTimeout); timeoutRefs.current.clear();
   }, [teamId]);
 
   const opponents = useMemo(() => {
     if (!teams || !teamGames) return [];
     const oppIds = new Set(teamGames.map(g => g.home === teamId ? g.away : g.home));
-    return Array.from(oppIds)
-      .map(id => teams.find(t => t.id === id))
-      .filter(t => t && t.logo && t.id !== teamId);
+    return Array.from(oppIds).map(id => teams.find(t => t.id === id)).filter(t => t && t.logo && t.id !== teamId);
   }, [teamGames, teams, teamId]);
 
   useEffect(() => {
     let timer;
     if (isPlaying && timeLeft > 0) {
-      timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 0.1) {
-            clearInterval(timer); return 0;
-          }
-          return prev - 0.1;
-        });
-      }, 100); 
+      timer = setInterval(() => { setTimeLeft(prev => prev <= 0.1 ? 0 : prev - 0.1); }, 100); 
     } else if (timeLeft === 0 && isPlaying) {
       setIsPlaying(false);
-      if (score >= 20 && misses === 0) {
-        setHasPerfectScore(true); setIsChampionTheme(true);
-        localStorage.setItem(`perfect_score_${teamId}`, 'true');
-        localStorage.setItem(`champion_theme_active_${teamId}`, 'true');
-      }
-      if (score > highScore) {
-        setHighScore(score); localStorage.setItem(`whack_score_${teamId}`, score);
-      }
+      if (score >= 20 && misses === 0) { setHasPerfectScore(true); setIsChampionTheme(true); localStorage.setItem(`perfect_score_${teamId}`, 'true'); localStorage.setItem(`champion_theme_active_${teamId}`, 'true'); }
+      if (score > highScore) { setHighScore(score); localStorage.setItem(`whack_score_${teamId}`, score); }
     }
     return () => clearInterval(timer);
   }, [isPlaying, timeLeft, score, misses, highScore, teamId]);
@@ -265,52 +169,20 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
             const scale = Math.max(0.35, Math.min(1.8, 1 - (diff * 0.04)));
             const lifespan = Math.max(600, 2000 - (diff * 40));
             const newEnemyId = Math.random().toString(36).substr(2, 9);
-            
-            const timerId = setTimeout(() => {
-              setActiveEnemies(prev => prev.filter(e => e.id !== newEnemyId));
-              setScore(prev => prev - 1); setMisses(prev => prev + 1); 
-              timeoutRefs.current.delete(newEnemyId);
-            }, lifespan);
+            const timerId = setTimeout(() => { setActiveEnemies(prev => prev.filter(e => e.id !== newEnemyId)); setScore(prev => prev - 1); setMisses(prev => prev + 1); timeoutRefs.current.delete(newEnemyId); }, lifespan);
             timeoutRefs.current.set(newEnemyId, timerId);
-
-            setActiveEnemies(prev => [...prev, {
-              id: newEnemyId, opponent: randomEnemy,
-              top: `${15 + Math.random() * 65}%`, left: `${10 + Math.random() * 75}%`,
-              scale, lifespan
-            }]);
+            setActiveEnemies(prev => [...prev, { id: newEnemyId, opponent: randomEnemy, top: `${15 + Math.random() * 65}%`, left: `${10 + Math.random() * 75}%`, scale, lifespan }]);
           }
         }
       }, spawnRate); 
-    } else {
-      timeoutRefs.current.forEach(clearTimeout);
-      timeoutRefs.current.clear(); setActiveEnemies([]);
-    }
+    } else { timeoutRefs.current.forEach(clearTimeout); timeoutRefs.current.clear(); setActiveEnemies([]); }
     return () => clearInterval(spawner);
   }, [isPlaying, opponents, team, score]);
 
-  const startGame = () => {
-    setScore(0); setMisses(0); setTimeLeft(30); setActiveEnemies([]); setIsPlaying(true);
-  };
-
-  const handleEnemyClick = (e, id) => {
-    e.stopPropagation(); setScore(prev => prev + 1);
-    if (timeoutRefs.current.has(id)) {
-      clearTimeout(timeoutRefs.current.get(id));
-      timeoutRefs.current.delete(id);
-    }
-    setActiveEnemies(prev => prev.filter(enemy => enemy.id !== id));
-  };
-
-  const handleBackgroundClick = () => {
-    if (isPlaying) { setScore(prev => prev - 1); setMisses(prev => prev + 1); }
-  };
-
-  const closeMinigame = () => {
-    if (isPlaying && score > highScore) {
-      setHighScore(score); localStorage.setItem(`whack_score_${teamId}`, score);
-    }
-    setShowMinigame(false); setIsPlaying(false);
-  };
+  const startGame = () => { setScore(0); setMisses(0); setTimeLeft(30); setActiveEnemies([]); setIsPlaying(true); };
+  const handleEnemyClick = (e, id) => { e.stopPropagation(); setScore(prev => prev + 1); if (timeoutRefs.current.has(id)) { clearTimeout(timeoutRefs.current.get(id)); timeoutRefs.current.delete(id); } setActiveEnemies(prev => prev.filter(enemy => enemy.id !== id)); };
+  const handleBackgroundClick = () => { if (isPlaying) { setScore(prev => prev - 1); setMisses(prev => prev + 1); } };
+  const closeMinigame = () => { if (isPlaying && score > highScore) { setHighScore(score); localStorage.setItem(`whack_score_${teamId}`, score); } setShowMinigame(false); setIsPlaying(false); };
 
   const pageBackgroundClass = isChampionTheme ? "bg-yellow-400/20" : "bg-gray-50";
 

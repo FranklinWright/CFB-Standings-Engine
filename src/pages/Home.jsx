@@ -1,7 +1,25 @@
+/**
+ * @file Home.jsx
+ * @description Serves as the dashboard/landing page. 
+ * Displays the Top 25 national rankings based on projected season results.
+ */
+
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
+/**
+ * Home Component
+ * @param {Object} props
+ * @param {Array} props.teams - Array of team objects
+ * @param {Array} props.schedule - Array of game objects
+ * @param {Object} props.results - Mapping of gameId to winnerId
+ */
 function Home({ teams, schedule, results }) {
+  
+  /**
+   * Aggregates team standings and sorts them by wins and ratings.
+   * Returns a sorted array of teams for the ranking display.
+   */
   const standings = useMemo(() => {
     const stats = teams.map(t => ({ ...t, wins: 0, losses: 0 }));
     
@@ -51,7 +69,12 @@ function Home({ teams, schedule, results }) {
                 
                 {team.logo && (
                   <div className="w-10 h-10 md:w-12 md:h-12 shrink-0 flex items-center justify-center">
-                    <img src={team.logo} alt={team.name} className="w-full h-full object-contain drop-shadow-sm group-hover:scale-110 transition-transform" />
+                    <img 
+                      src={team.logo} 
+                      alt={team.name} 
+                      onError={(e) => { e.target.src = '/favicon.ico'; }} 
+                      className="w-full h-full object-contain drop-shadow-sm group-hover:scale-110 transition-transform" 
+                    />
                   </div>
                 )}
 

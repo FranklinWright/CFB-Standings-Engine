@@ -1,12 +1,23 @@
+/**
+ * @file App.jsx
+ * @description The main entry point and orchestrator for the College Football Engine.
+ * Manages global application state, routing, data persistence, and the shared 
+ * result-tracking logic required for the simulation engine.
+ */
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useState, useEffect, useMemo } from 'react';
-import { teams, masterSchedule } from './teams';
+import { teams, masterSchedule } from './data/teams';
 import Home from './pages/Home';
 import TeamPage from './pages/TeamPage';
 import TeamsDirectory from './pages/TeamsDirectory';
 import ConferenceStandings from './pages/ConferenceStandings';
 import PlayoffBracket from './pages/PlayoffBracket';
 
+/**
+ * ScrollToTop Component
+ * A utility component that resets the window scroll position 
+ * whenever the route path changes.
+ */
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -15,6 +26,11 @@ function ScrollToTop() {
   return null;
 }
 
+/**
+ * App Component
+ * @description Serves as the central state manager for user selections (results),
+ * simulation logic, and data import/export functionality.
+ */
 function App() {
   const [results, setResults] = useState(() => {
     const saved = localStorage.getItem('cfb_picks_2026');
