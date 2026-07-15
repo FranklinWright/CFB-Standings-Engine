@@ -1,14 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function PlayoffBracket({ playoffData, teams, results, onPick }) {
   const { games, seedMap, ccGames, ccgsComplete, bowlGames } = playoffData;
   const [activeTab, setActiveTab] = useState('ccg'); // Tabs: 'ccg', 'cfp', 'bowls'
+
+  // LOGO FIX: Fallback to CBS Sports if the ESPN logo is the default broken one
+  const getLogoSrc = (logoUrl, teamId) => {
+    if (!logoUrl) return null;
+    if (logoUrl.includes('default.png') && teamId) {
+      return `https://sports.cbsimg.net/images/collegefootball/logos/50x50/${teamId.toUpperCase()}.png`;
+    }
+    return logoUrl;
+  };
 
   const getTeamInfo = (teamId) => {
     if (!teamId) return { name: 'TBD', logo: null, seed: '-' };
     const team = teams.find(t => t.id === teamId);
     return { ...team, seed: seedMap[teamId] || '-' };
   };
+
+  // FCS BOUNCER: Checks if a team is from the FCS/Other conference
+  const isFCS = (teamId) => {
+    if (!teamId) return false;
+    const team = teams.find(t => t.id === teamId);
+    return team?.conf === 'FCS/Other';
+  };
+
+  // AUTO-RESOLVE FIX: Silently auto-pick any FCS Championship games so they don't block the bracket
+  useEffect(() => {
+    if (ccGames) {
+      ccGames.forEach(game => {
+        if ((isFCS(game.home) || isFCS(game.away)) && !results[game.id]) {
+          // Instantly pick a winner in the background to satisfy the engine's requirements
+          if (game.home && game.away) {
+            onPick(game.id, game.home); 
+          }
+        }
+      });
+    }
+  }, [ccGames, results, onPick]);
+
+  // Filter out any games that accidentally included an FCS team so they don't render visually
+  const safeCcGames = ccGames?.filter(g => !isFCS(g.home) && !isFCS(g.away)) || [];
+  const safeBowlGames = bowlGames?.filter(g => !isFCS(g.home) && !isFCS(g.away)) || [];
+
+  // Override the engine's ccgsComplete just in case to strictly look at FBS games
+  const actualCcgsComplete = safeCcGames.length > 0 ? safeCcGames.every(game => results[game.id]) : ccgsComplete;
 
   const GameCard = ({ gameId, className }) => {
     const game = games.find(g => g.id === gameId);
@@ -31,7 +68,7 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
             >
             <div className="flex items-center gap-3">
                 {!game.isCCG && !game.isBowl && <span className={`text-[10px] font-black w-4 text-left ${winner === game.away ? 'text-[#25bee8]' : 'text-slate-400'}`}>{away.seed !== '-' ? away.seed : ''}</span>}
-                {away.logo && <img src={away.logo} alt="" className="w-6 h-6 object-contain" />}
+                {away.logo && <img src={getLogoSrc(away.logo, away.id)} alt="" className="w-6 h-6 object-contain" />}
                 <span className={`font-bold text-sm uppercase truncate ${!away.logo && 'ml-2'}`}>{away.name}</span>
             </div>
             {winner === game.away && <span className={game.isBowl ? "text-[#f5ce42] text-sm font-black" : "text-[#25bee8] text-sm font-black"}>✓</span>}
@@ -43,7 +80,7 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
             >
             <div className="flex items-center gap-3">
                 {!game.isCCG && !game.isBowl && <span className={`text-[10px] font-black w-4 text-left ${winner === game.home ? 'text-[#25bee8]' : 'text-slate-400'}`}>{home.seed !== '-' ? home.seed : ''}</span>}
-                {home.logo && <img src={home.logo} alt="" className="w-6 h-6 object-contain" />}
+                {home.logo && <img src={getLogoSrc(home.logo, home.id)} alt="" className="w-6 h-6 object-contain" />}
                 <span className={`font-bold text-sm uppercase truncate ${!home.logo && 'ml-2'}`}>{home.name}</span>
             </div>
             {winner === game.home && <span className={game.isBowl ? "text-[#f5ce42] text-sm font-black" : "text-[#25bee8] text-sm font-black"}>✓</span>}
@@ -76,7 +113,7 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
             className={`cursor-pointer flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'ccg' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-700'}`}
           >
             Championships
-            {!ccgsComplete && <span className="ml-2 w-2 h-2 inline-block rounded-full bg-red-500 animate-pulse"></span>}
+            {!actualCcgsComplete && <span className="ml-2 w-2 h-2 inline-block rounded-full bg-red-500 animate-pulse"></span>}
           </button>
           
           <button 
@@ -102,10 +139,10 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="flex items-center justify-between border-b-2 border-slate-200 mb-6 pb-2">
                   <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tighter">Conference Title Games</h2>
-                  {!ccgsComplete && <span className="text-[10px] font-black uppercase bg-red-100 text-red-600 px-3 py-1 rounded-full shadow-sm">Action Required</span>}
+                  {!actualCcgsComplete && <span className="text-[10px] font-black uppercase bg-red-100 text-red-600 px-3 py-1 rounded-full shadow-sm">Action Required</span>}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {ccGames.map(game => (
+                  {safeCcGames.map(game => (
                       <GameCard key={game.id} gameId={game.id} className={results[game.id] ? "border-slate-300" : "border-slate-900 shadow-[0_0_15px_rgba(15,23,42,0.15)]"} />
                   ))}
               </div>
@@ -115,7 +152,7 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
         {/* TAB 2: 12-TEAM CFP BRACKET */}
         {activeTab === 'cfp' && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {ccgsComplete ? (
+            {actualCcgsComplete ? (
                 <div className="overflow-x-auto pb-8">
                     <div className="grid grid-cols-4 min-w-[1200px] gap-8 bg-white shadow-sm border border-slate-200 p-6 rounded-3xl">
                         <div className="flex flex-col justify-between h-[750px] py-4">
@@ -157,14 +194,14 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
         {/* TAB 3: NON-PLAYOFF BOWL SEASON */}
         {activeTab === 'bowls' && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {ccgsComplete ? (
-              bowlGames && bowlGames.length > 0 ? (
+            {actualCcgsComplete ? (
+              safeBowlGames.length > 0 ? (
                 <div>
                     <div className="flex items-center justify-between border-b-2 border-slate-200 mb-6 pb-2">
                         <h2 className="text-2xl font-black uppercase text-slate-900 tracking-tighter">Winter Bowl Season</h2>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {bowlGames.map(game => (
+                        {safeBowlGames.map(game => (
                             <GameCard key={game.id} gameId={game.id} className={results[game.id] ? "border-slate-300" : "border-[#f5ce42] shadow-[0_0_15px_rgba(245,206,66,0.15)]"} />
                         ))}
                     </div>
@@ -172,7 +209,7 @@ function PlayoffBracket({ playoffData, teams, results, onPick }) {
               ) : (
                 <div className="text-center p-12">
                    <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-2">No Eligible Teams Remaining</h3>
-                   <p className="text-slate-500 font-medium">There are no teams left with 6+ wins that missed the playoff.</p>
+                   <p className="text-slate-500 font-medium">There are no FBS teams left with 6+ wins that missed the playoff.</p>
                 </div>
               )
             ) : (

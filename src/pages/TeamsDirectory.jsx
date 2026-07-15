@@ -11,9 +11,19 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
     const styles = {
       'SEC': '#f5ce42', 'Big Ten': '#25bee8', 'ACC': '#003087',
       'Big 12': '#C41230', 'Pac-12': '#ff4d4d', 'American': '#006747', 
-      'Independent': '#0c2340', 'CUSA': '#003366', 'Mountain West': '#98002e'
+      'Independent': '#0c2340', 'CUSA': '#003366', 'Mountain West': '#98002e',
+      'Sun Belt': '#0039A6', 'MAC': '#006633', 'FCS/Other': '#475569'
     };
     return styles[conf] || '#94a3b8';
+  };
+
+  const getLogoSrc = (team) => {
+    if (!team.logo) return null;
+    // Automatically switch to CBS Sports logo if it's the default broken ESPN logo
+    if (team.logo.includes('default.png')) {
+      return `https://sports.cbsimg.net/images/collegefootball/logos/50x50/${team.id.toUpperCase()}.png`;
+    }
+    return team.logo;
   };
 
   // 1. Calculate all stats globally first
@@ -34,9 +44,11 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
     });
   }, [teams, masterSchedule, results]);
 
-  // 2. Calculate Top 25 National Ranks to show next to names
+  // 2. Calculate Top 25 National Ranks to show next to names (Excluding FCS for ranks)
   const nationalRanks = useMemo(() => {
-    const sorted = [...allTeamStats].sort((a, b) => b.wins - a.wins || b.rating - a.rating);
+    const sorted = [...allTeamStats]
+      .filter(t => t.conf !== 'FCS/Other')
+      .sort((a, b) => b.wins - a.wins || b.rating - a.rating);
     const ranks = {};
     sorted.forEach((t, i) => { ranks[t.id] = i + 1; });
     return ranks;
@@ -46,7 +58,16 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
   const filteredTeams = useMemo(() => {
     let result = allTeamStats.filter(team => {
       const matchesSearch = team.name.toLowerCase().includes(search.toLowerCase());
-      const matchesConf = selectedConf === 'All' || team.conf === selectedConf;
+      
+      let matchesConf = false;
+      if (selectedConf === 'All') {
+        // Hide FCS/Other from the "All" default view
+        matchesConf = team.conf !== 'FCS/Other';
+      } else {
+        // Show specific conference (including FCS if clicked)
+        matchesConf = team.conf === selectedConf;
+      }
+
       return matchesSearch && matchesConf;
     });
 
@@ -77,8 +98,12 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
   const conferences = useMemo(() => {
     const all = [...new Set(teams.map(t => t.conf))].sort();
     const priority = ['SEC', 'Big Ten'];
-    const others = all.filter(c => !priority.includes(c));
-    return ['All', ...priority, ...others];
+    // Filter out priority and FCS to place them manually
+    const others = all.filter(c => !priority.includes(c) && c !== 'FCS/Other');
+    const hasFCS = all.includes('FCS/Other');
+    
+    // Put FCS/Other at the very end of the array
+    return ['All', ...priority, ...others, ...(hasFCS ? ['FCS/Other'] : [])];
   }, [teams]);
 
   return (
@@ -97,9 +122,9 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
               <div className="relative flex-1 md:flex-none">
                 <button 
                   onClick={() => setShowSimMenu(!showSimMenu)}
-                  className="w-full px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] transition-all border-2 border-black bg-[#25bee8] text-white flex items-center justify-center gap-2 hover:bg-[#f5ce42] hover:text-black shadow-lg"
+                  className="cursor-pointer w-full px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] transition-all border-2 border-black bg-[#25bee8] text-white flex items-center justify-center gap-2 hover:bg-[#1aa0c7] shadow-lg"
                 >
-                  Simulation Tools 🛠️
+                  Simulation Tools
                 </button>
 
                 {showSimMenu && (
@@ -112,7 +137,7 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
                           onSimulate(mode.id);
                           setShowSimMenu(false);
                         }}
-                        className="w-full p-4 text-left hover:bg-gray-50 flex items-start gap-3 transition-colors border-b last:border-0 border-gray-100 group"
+                        className="cursor-pointer w-full p-4 text-left hover:bg-gray-50 flex items-start gap-3 transition-colors border-b last:border-0 border-gray-100 group"
                       >
                         <span className="text-2xl group-hover:scale-125 transition-transform">{mode.icon}</span>
                         <div>
@@ -128,13 +153,13 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
               <div className="flex bg-gray-100 p-1 rounded-xl border-2 border-gray-200">
                 <button 
                   onClick={() => setSortBy('rank')}
-                  className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 ${sortBy === 'rank' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`cursor-pointer px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 ${sortBy === 'rank' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                   <span className="opacity-50 text-[12px]">#</span> Rank
                 </button>
                 <button 
                   onClick={() => setSortBy('name')}
-                  className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 ${sortBy === 'name' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`cursor-pointer px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 ${sortBy === 'name' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                   <span className="opacity-50 text-[12px]">AZ</span> Name
                 </button>
@@ -151,7 +176,7 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
                 <button 
                   key={conf} 
                   onClick={() => setSelectedConf(conf)}
-                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all border-2 ${
+                  className={`cursor-pointer px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all border-2 ${
                     isActive ? 'text-white shadow-md' : 'bg-white border-gray-200 text-slate-400'
                   }`}
                   style={{ 
@@ -186,7 +211,7 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
             <Link 
               to={`/team/${team.id}`} 
               key={team.id} 
-              className="group bg-white border border-gray-100 rounded-2xl p-4 transition-all text-center relative overflow-hidden flex flex-col items-center justify-center min-h-[140px] shadow-sm hover:shadow-xl hover:-translate-y-1"
+              className="cursor-pointer group bg-white border border-gray-100 rounded-2xl p-4 transition-all text-center relative overflow-hidden flex flex-col items-center justify-center min-h-[140px] shadow-sm hover:shadow-xl hover:-translate-y-1"
             >
               <div className="absolute top-0 left-0 w-full h-1.5 z-20" style={{ backgroundColor: team.color }} />
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity z-10" style={{ backgroundColor: team.color }} />
@@ -194,7 +219,7 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
               <div className="relative z-30 flex flex-col items-center w-full mt-2">
                 {team.logo && (
                   <div className="bg-white p-1.5 rounded-full mb-2 shadow-sm border border-gray-100 group-hover:shadow-md group-hover:scale-110 transition-all duration-300">
-                    <img src={team.logo} alt={team.name} className="w-10 h-10 object-contain drop-shadow-sm" />
+                    <img src={getLogoSrc(team)} alt={team.name} className="w-10 h-10 object-contain drop-shadow-sm" />
                   </div>
                 )}
                 

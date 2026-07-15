@@ -2,6 +2,16 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
 function ConferenceStandings({ teams, schedule, results }) {
+  
+  const getLogoSrc = (team) => {
+    if (!team.logo) return null;
+    // Automatically switch to CBS Sports logo if it's the default broken ESPN logo
+    if (team.logo.includes('default.png')) {
+      return `https://sports.cbsimg.net/images/collegefootball/logos/50x50/${team.id.toUpperCase()}.png`;
+    }
+    return team.logo;
+  };
+
   // National ranks calculated for Top 25 display
   const nationalRanks = useMemo(() => {
     const stats = teams.map(t => {
@@ -9,11 +19,14 @@ function ConferenceStandings({ teams, schedule, results }) {
       schedule.forEach(game => {
         if (results[game.id] === t.id) wins++;
       });
-      return { id: t.id, wins, rating: t.rating };
+      return { id: t.id, wins, rating: t.rating, conf: t.conf };
     });
-    stats.sort((a, b) => b.wins - a.wins || b.rating - a.rating);
+    // Remove FCS from top 25 rankings logic
+    const filteredStats = stats.filter(t => t.conf !== 'FCS/Other');
+    filteredStats.sort((a, b) => b.wins - a.wins || b.rating - a.rating);
+    
     const ranks = {};
-    stats.forEach((t, i) => ranks[t.id] = i + 1);
+    filteredStats.forEach((t, i) => ranks[t.id] = i + 1);
     return ranks;
   }, [teams, schedule, results]);
 
@@ -60,7 +73,9 @@ function ConferenceStandings({ teams, schedule, results }) {
       'American', 'CUSA', 'Mountain West', 'Sun Belt', 'MAC', 'Independent'
     ];
 
-    const existingConfs = [...new Set(teams.map(t => t.conf))];
+    // Completely remove FCS/Other from the conference standings list
+    const existingConfs = [...new Set(teams.filter(t => t.conf !== 'FCS/Other').map(t => t.conf))];
+    
     const sortedConfs = existingConfs.sort((a, b) => {
       let indexA = popularityOrder.indexOf(a);
       let indexB = popularityOrder.indexOf(b);
@@ -105,7 +120,7 @@ function ConferenceStandings({ teams, schedule, results }) {
             <button
               key={conf.name}
               onClick={() => scrollToConf(conf.name)}
-              className="px-4 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md text-white"
+              className="cursor-pointer px-4 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md text-white"
               style={{ backgroundColor: getConfColor(conf.name) }}
             >
               {conf.name}
@@ -134,9 +149,8 @@ function ConferenceStandings({ teams, schedule, results }) {
                 <Link 
                   to={`/team/${team.id}`} 
                   key={team.id}
-                  className="grid grid-cols-12 p-4 md:p-5 items-center hover:bg-gray-50 transition-colors group"
+                  className="cursor-pointer grid grid-cols-12 p-4 md:p-5 items-center hover:bg-gray-50 transition-colors group"
                 >
-                  {/* Made the # number black instead of gray */}
                   <div className="col-span-1 text-center font-black text-slate-900 group-hover:text-[#25bee8] transition-colors">{index + 1}</div>
                   
                   <div className="col-span-6 md:col-span-5 flex items-center gap-2 md:gap-4">
@@ -145,7 +159,7 @@ function ConferenceStandings({ teams, schedule, results }) {
                     {team.logo && (
                       <div className="w-8 h-8 md:w-10 md:h-10 shrink-0">
                         <img 
-                          src={team.logo} 
+                          src={getLogoSrc(team)} 
                           alt={team.name} 
                           className="w-full h-full object-contain drop-shadow-sm group-hover:scale-110 transition-transform duration-300" 
                         />
@@ -153,7 +167,6 @@ function ConferenceStandings({ teams, schedule, results }) {
                     )}
                     
                     <div className="flex items-center gap-1.5 truncate">
-                      {/* Top 25 Rank inserted next to the name */}
                       {nationalRanks[team.id] <= 25 && <span className="font-black text-slate-900 text-xs">#{nationalRanks[team.id]}</span>}
                       <span className="font-bold text-slate-800 uppercase text-xs md:text-sm truncate group-hover:text-slate-950">{team.name}</span>
                     </div>
@@ -163,7 +176,6 @@ function ConferenceStandings({ teams, schedule, results }) {
                     {team.confWins}<span className="text-slate-300 font-light mx-0.5">-</span>{team.confLosses}
                   </div>
                   
-                  {/* Made the overall record black instead of gray */}
                   <div className="col-span-3 text-center font-bold text-slate-900 text-sm md:text-base">
                     {team.wins}-{team.losses}
                   </div>
