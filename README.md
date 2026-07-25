@@ -1,7 +1,7 @@
 # CFB Standings Engine 🏈
 
 A simple React web application to simulate the college football season, view conference standings, and generate the 12-team College Football Playoff bracket.
-Access the live application at: collegefootballstandings.me
+Access the live application at: collegefootball.games
 
 ## Features
 * **Season Simulation:** Pick winners manually or use the simulation engine to generate results.

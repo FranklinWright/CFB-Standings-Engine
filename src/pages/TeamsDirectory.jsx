@@ -1,12 +1,12 @@
-/**
+﻿/**
  * @file TeamsDirectory.jsx
  * @description Serves as the index page for all teams. 
  * Provides search, conference filtering, and sorting functionality, 
  * while calculating live national rankings (Top 25).
  */
 
-import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 /**
  * TeamsDirectory Component
@@ -17,10 +17,20 @@ import { Link } from 'react-router-dom';
  * @param {Function} props.onSimulate - Handler for simulation mode selection
  */
 function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimulate }) {
+  const location = useLocation();
   const [search, setSearch] = useState('');
   const [selectedConf, setSelectedConf] = useState('All');
   const [showSimMenu, setShowSimMenu] = useState(false);
   const [sortBy, setSortBy] = useState('rank');
+
+  // Sync search input with URL search params from Nav bar
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchQuery = params.get('search');
+    if (searchQuery) {
+      setSearch(searchQuery);
+    }
+  }, [location.search]);
 
   /**
    * Returns conference-specific branding color for UI elements.
@@ -36,8 +46,7 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
   };
 
   /**
-   * Safely returns logo URL. 
-   * Fallback to CBS logic included for ESPN default placeholders.
+   * Safely returns logo URL.
    */
   const getLogoSrc = (team) => {
     if (!team.logo) return null;
@@ -47,7 +56,7 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
     return team.logo;
   };
 
-  // 1. Calculate all stats globally
+  // 1. Calculate stats globally
   const allTeamStats = useMemo(() => {
     return teams.map(team => {
       let wins = 0;
@@ -75,11 +84,19 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
     return ranks;
   }, [allTeamStats]);
 
-  // 3. Filter and Sort for UI display
+  // 3. Filter and Sort logic
   const filteredTeams = useMemo(() => {
     let result = allTeamStats.filter(team => {
       const matchesSearch = team.name.toLowerCase().includes(search.toLowerCase());
-      let matchesConf = selectedConf === 'All' ? team.conf !== 'FCS/Other' : team.conf === selectedConf;
+      
+      let matchesConf = false;
+      if (selectedConf === 'All') {
+        // Show FCS in search results if they specifically match, otherwise hide them in 'All' view to keep it clean
+        matchesConf = search.trim() !== '' ? true : team.conf !== 'FCS/Other';
+      } else {
+        matchesConf = team.conf === selectedConf;
+      }
+
       return matchesSearch && matchesConf;
     });
 
@@ -87,6 +104,7 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
       result.sort((a, b) => a.name.localeCompare(b.name));
     } else {
       result.sort((a, b) => {
+        // Strict sorting by wins/power, no SEC/Big Ten search bias
         const aHasFullSchedule = a.totalGames >= 12;
         const bHasFullSchedule = b.totalGames >= 12;
         if (aHasFullSchedule && !bHasFullSchedule) return -1;
@@ -105,6 +123,7 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
     { id: 'coinflip', label: 'Pure Chaos', desc: '50/50 chance for every single game', icon: '🎲' }
   ];
 
+  // Conference buttons list ensuring FCS/Other is retained if it exists in the data
   const conferences = useMemo(() => {
     const all = [...new Set(teams.map(t => t.conf))].sort();
     const priority = ['SEC', 'Big Ten'];
@@ -120,6 +139,7 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
           <div className="flex flex-col lg:flex-row gap-4 items-center">
             <input
               type="text"
+              value={search}
               placeholder={`Search ${filteredTeams.length} ${selectedConf === 'All' ? 'FBS' : selectedConf} Teams...`}
               className="flex-1 w-full bg-gray-100 border-2 border-transparent focus:bg-white rounded-xl px-6 py-3 text-slate-900 outline-none transition-all font-bold text-lg focus:border-[#25bee8]"
               onChange={(e) => setSearch(e.target.value)}
