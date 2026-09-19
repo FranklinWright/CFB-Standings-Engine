@@ -7,13 +7,16 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useMemo } from 'react';
 import { teams, masterSchedule } from './data/teams';
+import { liveResults as liveResultsData } from './data/liveResults';
+import { isPastDate } from './data/weekMap';
 import Home from './pages/Home';
 import Poll from './pages/Poll';
 import TeamPage from './pages/TeamPage';
 import TeamsDirectory from './pages/TeamsDirectory';
 import ConferenceStandings from './pages/ConferenceStandings';
 import PlayoffBracket from './pages/PlayoffBracket';
-import NotFound from './pages/NotFound'; // <-- NEW IMPORT
+import NotFound from './pages/NotFound';
+import Schedule from './pages/Schedule';
 
 /**
  * ScrollToTop Component
@@ -123,6 +126,7 @@ function Navigation({ setShowModal, resetAllPicks, teams, results, masterSchedul
           
           <div className="flex flex-col sm:flex-row gap-4 md:gap-6 text-xs font-black uppercase tracking-[0.2em] w-full sm:w-auto">
             <Link to="/poll" onClick={() => setIsMobileMenuOpen(false)} className="text-slate-500 hover:text-[#25bee8] transition-all py-2 sm:py-0 border-b border-gray-100 sm:border-none w-full">Poll</Link>
+            <Link to="/schedule" onClick={() => setIsMobileMenuOpen(false)} className="text-slate-500 hover:text-[#25bee8] transition-all py-2 sm:py-0 border-b border-gray-100 sm:border-none w-full">Schedule</Link>
             <Link to="/standings" onClick={() => setIsMobileMenuOpen(false)} className="text-slate-500 hover:text-[#25bee8] transition-all py-2 sm:py-0 border-b border-gray-100 sm:border-none w-full">Standings</Link>
             <Link to="/teams" onClick={() => setIsMobileMenuOpen(false)} className="text-slate-500 hover:text-[#25bee8] transition-all py-2 sm:py-0 border-b border-gray-100 sm:border-none w-full">Teams</Link>
             <Link to="/postseason" onClick={() => setIsMobileMenuOpen(false)} className="text-slate-500 hover:text-[#25bee8] transition-all py-2 sm:py-0 border-b border-gray-100 sm:border-none w-full">Postseason</Link>
@@ -204,6 +208,12 @@ function App() {
     return saved ? JSON.parse(saved) : {};
   });
 
+  // Merge user picks with real played game results; live results always win
+  const effectiveResults = useMemo(
+    () => ({ ...results, ...liveResultsData }),
+    [results]
+  );
+
   const [showModal, setShowModal] = useState(false);
   const [importCode, setImportCode] = useState("");
   const [copyStatus, setCopyStatus] = useState("Copy Save Code");
@@ -214,6 +224,12 @@ function App() {
   }, [results]);
 
   const handlePick = (gameId, winnerId) => {
+    if (liveResultsData[gameId]) return; // real result — locked
+    // Lock regular-season games whose date is in the past
+    if (typeof gameId === 'number') {
+      const game = masterSchedule.find(g => g.id === gameId);
+      if (game && isPastDate(game.date)) return;
+    }
     setResults(prev => {
       const newResults = { ...prev, [gameId]: winnerId };
       
@@ -255,6 +271,11 @@ function App() {
     });
 
     masterSchedule.forEach(game => {
+      if (liveResultsData[game.id]) {
+        newResults[game.id] = liveResultsData[game.id]; // real result wins
+        return;
+      }
+      if (isPastDate(game.date)) return; // don't simulate past games
       if (!newResults[game.id]) {
         const home = teams.find(t => t.id === game.home);
         const away = teams.find(t => t.id === game.away);
@@ -353,7 +374,7 @@ function App() {
     const stats = teams.map(t => ({ ...t, wins: 0, losses: 0, confWins: 0, confLosses: 0 }));
     
     masterSchedule.forEach(game => {
-      const winnerId = results[game.id];
+      const winnerId = effectiveResults[game.id];
       if (winnerId) {
         const homeTeam = teams.find(t => t.id === game.home);
         const awayTeam = teams.find(t => t.id === game.away);
@@ -387,13 +408,13 @@ function App() {
       if (confTeams.length >= 2) {
         const gameId = `cc_${conf.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}`;
         ccGames.push({ id: gameId, round: 0, name: `${conf} Championship`, detail: 'Neutral Site', home: confTeams[0].id, away: confTeams[1].id, isCCG: true });
-        if (results[gameId]) confChamps.push(stats.find(t => t.id === results[gameId]));
+        if (effectiveResults[gameId]) confChamps.push(stats.find(t => t.id === effectiveResults[gameId]));
       } else if (confTeams.length === 1) {
         confChamps.push(confTeams[0]);
       }
     });
 
-    const ccgsComplete = ccGames.length > 0 && ccGames.every(g => results[g.id]);
+    const ccgsComplete = ccGames.length > 0 && ccGames.every(g => effectiveResults[g.id]);
 
     let seedsArray = [];
     let seedMap = {};
@@ -430,13 +451,13 @@ function App() {
         { id: 'p_r1_1', round: 1, name: 'First Round', detail: 'Campus Site', home: getSeed(5)?.id, away: getSeed(12)?.id },
         { id: 'p_r1_2', round: 1, name: 'First Round', detail: 'Campus Site', home: getSeed(6)?.id, away: getSeed(11)?.id },
         { id: 'p_r1_3', round: 1, name: 'First Round', detail: 'Campus Site', home: getSeed(7)?.id, away: getSeed(10)?.id },
-        { id: 'p_qf_1', round: 2, name: 'Quarterfinal', detail: 'Bowl Game', home: getSeed(1)?.id, away: results['p_r1_4'] || null },
-        { id: 'p_qf_4', round: 2, name: 'Quarterfinal', detail: 'Bowl Game', home: getSeed(4)?.id, away: results['p_r1_1'] || null },
-        { id: 'p_qf_3', round: 2, name: 'Quarterfinal', detail: 'Bowl Game', home: getSeed(3)?.id, away: results['p_r1_2'] || null },
-        { id: 'p_qf_2', round: 2, name: 'Quarterfinal', detail: 'Bowl Game', home: getSeed(2)?.id, away: results['p_r1_3'] || null },
-        { id: 'p_sf_1', round: 3, name: 'Semifinal', detail: 'Bowl Game', home: results['p_qf_1'] || null, away: results['p_qf_4'] || null },
-        { id: 'p_sf_2', round: 3, name: 'Semifinal', detail: 'Bowl Game', home: results['p_qf_3'] || null, away: results['p_qf_2'] || null },
-        { id: 'p_nc', round: 4, name: 'National Championship', detail: 'Neutral Site', home: results['p_sf_1'] || null, away: results['p_sf_2'] || null }
+        { id: 'p_qf_1', round: 2, name: 'Quarterfinal', detail: 'Bowl Game', home: getSeed(1)?.id, away: effectiveResults['p_r1_4'] || null },
+        { id: 'p_qf_4', round: 2, name: 'Quarterfinal', detail: 'Bowl Game', home: getSeed(4)?.id, away: effectiveResults['p_r1_1'] || null },
+        { id: 'p_qf_3', round: 2, name: 'Quarterfinal', detail: 'Bowl Game', home: getSeed(3)?.id, away: effectiveResults['p_r1_2'] || null },
+        { id: 'p_qf_2', round: 2, name: 'Quarterfinal', detail: 'Bowl Game', home: getSeed(2)?.id, away: effectiveResults['p_r1_3'] || null },
+        { id: 'p_sf_1', round: 3, name: 'Semifinal', detail: 'Bowl Game', home: effectiveResults['p_qf_1'] || null, away: effectiveResults['p_qf_4'] || null },
+        { id: 'p_sf_2', round: 3, name: 'Semifinal', detail: 'Bowl Game', home: effectiveResults['p_qf_3'] || null, away: effectiveResults['p_qf_2'] || null },
+        { id: 'p_nc', round: 4, name: 'National Championship', detail: 'Neutral Site', home: effectiveResults['p_sf_1'] || null, away: effectiveResults['p_sf_2'] || null }
       ];
 
       const eligible = stats.filter(t => t.wins >= 6 && !seedsArray.find(s => s.id === t.id)).sort((a, b) => a.rank - b.rank);
@@ -479,7 +500,7 @@ function App() {
     }
 
     return { seeds: seedsArray, seedMap, games: [...ccGames, ...cfpGames, ...bowlGames], ccGames, cfpGames, bowlGames, ccgsComplete };
-  }, [teams, masterSchedule, results]);
+  }, [teams, masterSchedule, effectiveResults]);
 
   return (
     <Router>
@@ -492,11 +513,12 @@ function App() {
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/poll" element={<Poll teams={teams} schedule={masterSchedule} results={results} />} />
-            <Route path="/standings" element={<ConferenceStandings teams={teams} schedule={masterSchedule} results={results} />} />
-            <Route path="/teams" element={<TeamsDirectory teams={teams} masterSchedule={masterSchedule} results={results} onSimulate={runSimulation} />} />
-            <Route path="/postseason" element={<PlayoffBracket playoffData={playoffData} teams={teams} results={results} onPick={handlePick} />} />
-            <Route path="/team/:teamId" element={<TeamPage teams={teams} schedule={masterSchedule} results={results} onPick={handlePick} playoffData={playoffData} />} />
+            <Route path="/poll" element={<Poll teams={teams} schedule={masterSchedule} results={effectiveResults} />} />
+            <Route path="/schedule" element={<Schedule teams={teams} schedule={masterSchedule} results={effectiveResults} onPick={handlePick} liveResults={liveResultsData} />} />
+            <Route path="/standings" element={<ConferenceStandings teams={teams} schedule={masterSchedule} results={effectiveResults} />} />
+            <Route path="/teams" element={<TeamsDirectory teams={teams} masterSchedule={masterSchedule} results={effectiveResults} onSimulate={runSimulation} />} />
+            <Route path="/postseason" element={<PlayoffBracket playoffData={playoffData} teams={teams} results={effectiveResults} onPick={handlePick} />} />
+            <Route path="/team/:teamId" element={<TeamPage teams={teams} schedule={masterSchedule} results={effectiveResults} onPick={handlePick} playoffData={playoffData} liveResults={liveResultsData} />} />
             
             {/* Catch-all route for the 404 page */}
             <Route path="*" element={<NotFound />} />

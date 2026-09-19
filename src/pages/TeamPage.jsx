@@ -7,6 +7,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { historicalData } from '../data/history';
+import { isPastDate } from '../data/weekMap';
+import { liveScores } from '../data/liveResults';
 
 /**
  * TeamPage Component
@@ -17,7 +19,7 @@ import { historicalData } from '../data/history';
  * @param {Function} props.onPick - Handler for recording user game picks
  * @param {Object} props.playoffData - Playoff structure, seeds, and completion state
  */
-function TeamPage({ teams, schedule, results, onPick, playoffData }) {
+function TeamPage({ teams, schedule, results, onPick, playoffData, liveResults = {} }) {
   const { teamId } = useParams();
   const team = useMemo(() => teams.find(t => t.id === teamId), [teams, teamId]);
 
@@ -310,19 +312,23 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
               const opponentId = isHome ? game.away : game.home;
               const opponent = teams.find(t => t.id === opponentId) || { name: 'TBD', id: null, logo: null };
               const userSelection = results[game.id];
-              
+              const hasLiveResult = !!liveResults[game.id];
+              const isDatePast = typeof game.id === 'number' && isPastDate(game.date);
+              const isLocked = hasLiveResult || isDatePast;
+              const isFinal = hasLiveResult;
+
               return (
-                <div 
-                  key={game.id} 
-                  className={`border rounded-3xl p-4 md:p-6 flex flex-col md:flex-row items-center justify-between transform transition-all duration-300 hover:scale-[1.01] hover:shadow-lg border-l-[12px] 
+                <div
+                  key={game.id}
+                  className={`border rounded-3xl p-4 md:p-6 flex flex-col md:flex-row items-center justify-between transform transition-all duration-300 hover:scale-[1.01] hover:shadow-lg border-l-[12px]
                     ${game.isPlayoff ? 'border-slate-900 shadow-md' : game.isCCG ? 'border-[#25bee8] shadow-md' : game.isBowl ? 'border-[#f5ce42] shadow-md' : 'border-gray-100 shadow-sm'}
-                    ${isChampionTheme ? 'bg-yellow-50 border-yellow-400 shadow-yellow-500/20' : 'bg-white'}`} 
+                    ${isChampionTheme ? 'bg-yellow-50 border-yellow-400 shadow-yellow-500/20' : 'bg-white'}`}
                   style={{ borderLeftColor: game.isPlayoff ? '#0f172a' : game.isCCG ? '#25bee8' : game.isBowl ? '#f5ce42' : (isChampionTheme ? '#eab308' : team?.color) }}
                 >
                   <div className="flex flex-col text-center md:text-left w-full md:w-auto mb-4 md:mb-0">
                     <p className={`font-black text-[11px] uppercase mb-1 drop-shadow-sm flex items-center justify-center md:justify-start gap-1 flex-wrap
                       ${game.isPlayoff ? 'text-slate-900' : game.isCCG ? 'text-[#25bee8]' : game.isBowl ? 'text-[#f5ce42]' : isChampionTheme ? 'text-yellow-600' : 'text-slate-400'}`}>
-                      {game.isPlayoff ? '🏆 CFP ' : game.isCCG ? '🏅 ' : game.isBowl ? '🎳 ' : ''} 
+                      {game.isPlayoff ? '🏆 CFP ' : game.isCCG ? '🏅 ' : game.isBowl ? '🎳 ' : ''}
                       {game.date && <span className="font-extrabold">{game.date}</span>}
                       {game.location && <span className="font-extrabold"> at {game.location}</span>}
                       {game.name && <span className="opacity-75"> • {game.name}</span>}
@@ -330,10 +336,10 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
                     <h3 className="text-2xl md:text-3xl font-black uppercase text-slate-900 flex items-center justify-center md:justify-start gap-2 md:gap-3 mt-1">
                       <span className="text-slate-300 italic mr-1 text-lg md:text-xl">{isHome ? 'vs' : '@'}</span>
                       {opponent.logo && (
-                        <img 
-                          src={opponent.logo} 
-                          className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-sm" 
-                          alt="" 
+                        <img
+                          src={opponent.logo}
+                          className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-sm"
+                          alt=""
                           onError={(e) => { e.target.onerror = null; e.target.src = '/favicon.ico'; }}
                         />
                       )}
@@ -345,17 +351,48 @@ function TeamPage({ teams, schedule, results, onPick, playoffData }) {
                     </h3>
                   </div>
 
-                  <div className={`flex gap-2 p-1.5 rounded-2xl w-full md:w-auto ${isChampionTheme ? 'bg-yellow-100/50' : 'bg-gray-50'}`}>
-                    <button 
-                      onClick={() => opponent.id && onPick(game.id, teamId)} disabled={!opponent.id}
-                      className={`cursor-pointer flex-1 md:flex-none px-8 py-3 rounded-xl text-xs font-black uppercase transition-all duration-300 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${userSelection === teamId ? 'text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`} 
-                      style={userSelection === teamId ? { backgroundColor: isChampionTheme ? '#ca8a04' : team?.color, boxShadow: `0 4px 12px ${isChampionTheme ? '#ca8a0440' : team?.color + '40'}` } : {}}
-                    >Win</button>
-                    <button 
-                      onClick={() => opponent.id && onPick(game.id, opponentId)} disabled={!opponent.id}
-                      className={`cursor-pointer flex-1 md:flex-none px-8 py-3 rounded-xl text-xs font-black uppercase transition-all duration-300 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${userSelection && userSelection !== teamId ? 'bg-slate-950 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
-                    >Loss</button>
-                  </div>
+                  {isLocked ? (
+                    <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-2xl w-full md:w-auto justify-center md:justify-end">
+                      {(() => {
+                        const score = liveScores[game.id];
+                        const isTeamHome = game.home === teamId;
+                        const myScore = score ? (isTeamHome ? score.home : score.away) : null;
+                        const theirScore = score ? (isTeamHome ? score.away : score.home) : null;
+                        const won = userSelection === teamId;
+                        return (
+                          <>
+                            {isFinal ? (
+                              <span className="text-[8px] font-black uppercase tracking-widest bg-slate-900 text-white px-2.5 py-1 rounded-full">FINAL</span>
+                            ) : (
+                              <span className="text-[8px] font-black uppercase tracking-widest bg-slate-400 text-white px-2.5 py-1 rounded-full">PAST</span>
+                            )}
+                            {score && isFinal && (
+                              <span className="text-lg font-black text-slate-700 tabular-nums tracking-tight">
+                                {myScore} – {theirScore}
+                              </span>
+                            )}
+                            {userSelection && (
+                              <span className={`text-base font-black uppercase ${won ? 'text-green-600' : 'text-red-500'}`}>
+                                {won ? 'W' : 'L'}
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    <div className={`flex gap-2 p-1.5 rounded-2xl w-full md:w-auto ${isChampionTheme ? 'bg-yellow-100/50' : 'bg-gray-50'}`}>
+                      <button
+                        onClick={() => opponent.id && onPick(game.id, teamId)} disabled={!opponent.id}
+                        className={`cursor-pointer flex-1 md:flex-none px-8 py-3 rounded-xl text-xs font-black uppercase transition-all duration-300 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${userSelection === teamId ? 'text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+                        style={userSelection === teamId ? { backgroundColor: isChampionTheme ? '#ca8a04' : team?.color, boxShadow: `0 4px 12px ${isChampionTheme ? '#ca8a0440' : team?.color + '40'}` } : {}}
+                      >Win</button>
+                      <button
+                        onClick={() => opponent.id && onPick(game.id, opponentId)} disabled={!opponent.id}
+                        className={`cursor-pointer flex-1 md:flex-none px-8 py-3 rounded-xl text-xs font-black uppercase transition-all duration-300 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${userSelection && userSelection !== teamId ? 'bg-slate-950 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+                      >Loss</button>
+                    </div>
+                  )}
                 </div>
               );
             })}
