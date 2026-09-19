@@ -9,6 +9,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { teams, masterSchedule } from './data/teams';
 import { liveResults as liveResultsData } from './data/liveResults';
 import { isPastDate } from './data/weekMap';
+import { apPoll } from './data/apPoll';
 import Home from './pages/Home';
 import Poll from './pages/Poll';
 import TeamPage from './pages/TeamPage';
@@ -41,24 +42,31 @@ function Navigation({ setShowModal, resetAllPicks, teams, results, masterSchedul
   const [isFocused, setIsFocused] = useState(false);
   const navigate = useNavigate();
 
-  // Compute ranks for the search dropdown
+  // AP Poll Top 25 rank map: teamId → rank (only ranked teams, max 25)
   const nationalRanks = useMemo(() => {
-    const stats = teams.map(team => {
-      let wins = 0;
-      masterSchedule.forEach(game => {
-        if (results[game.id] === team.id) wins++;
-      });
-      return { ...team, wins };
+    if (!apPoll.isLoaded || !apPoll.rankings?.length) return {};
+    // CFBD school name → our app team ID (for names that don't match exactly)
+    const AP_ALIASES = {
+      'ole miss': 'miss', 'mississippi': 'miss',
+      'southern california': 'usc', 'louisiana state': 'lsu',
+      'brigham young': 'byu', 'southern methodist': 'smu',
+      'texas christian': 'tcu', 'central florida': 'ucf',
+      'connecticut': 'uconn', 'pittsburgh': 'pitt',
+      'appalachian state': 'app', 'app state': 'app',
+      'miami (fl)': 'mia',
+    };
+    const map = {};
+    apPoll.rankings.forEach(entry => {
+      if (entry.rank > 25) return;
+      const lower = entry.school.toLowerCase();
+      const aliasId = AP_ALIASES[lower];
+      const team = aliasId
+        ? teams.find(t => t.id === aliasId)
+        : teams.find(t => t.name.toLowerCase() === lower);
+      if (team) map[team.id] = entry.rank;
     });
-    
-    const sorted = stats
-      .filter(t => t.conf !== 'FCS/Other')
-      .sort((a, b) => b.wins - a.wins || b.rating - a.rating);
-    
-    const ranks = {};
-    sorted.forEach((t, i) => { ranks[t.id] = i + 1; });
-    return ranks;
-  }, [teams, masterSchedule, results]);
+    return map;
+  }, [teams]);
 
   // Handles typing in search bar, filtering out FCS, and sorting SEC / Big Ten higher
   const handleSearchChange = (e) => {
@@ -174,12 +182,17 @@ function Navigation({ setShowModal, resetAllPicks, teams, results, masterSchedul
                         className="w-full h-full object-contain"
                       />
                     </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase text-slate-900 leading-none">
-                        {nationalRanks[team.id] && <span className="text-slate-500 mr-1">#{nationalRanks[team.id]}</span>}
-                        {team.name}
-                      </p>
-                      <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">{team.conf}</p>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {nationalRanks[team.id] && (
+                        <span className="shrink-0 text-[9px] font-black text-white px-1.5 py-0.5 rounded-md leading-none"
+                              style={{ backgroundColor: '#f5ce42', color: '#0f172a' }}>
+                          #{nationalRanks[team.id]}
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase text-slate-900 leading-none truncate">{team.name}</p>
+                        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">{team.conf}</p>
+                      </div>
                     </div>
                   </div>
                 ))}
