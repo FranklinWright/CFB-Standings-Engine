@@ -9,6 +9,7 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { historicalData } from '../data/history';
 import { isPastDate } from '../data/weekMap';
 import { liveScores } from '../data/liveResults';
+import { apPoll } from '../data/apPoll';
 
 /**
  * TeamPage Component
@@ -86,6 +87,34 @@ function TeamPage({ teams, schedule, results, onPick, playoffData, liveResults =
 
   const confStyle = getConfStyles(team?.conf);
   const playoffSeed = playoffData?.ccgsComplete ? playoffData?.seedMap[teamId] : null;
+
+  const AP_ALIASES = {
+    'ole miss': 'miss', 'mississippi': 'miss',
+    'southern california': 'usc', 'louisiana state': 'lsu',
+    'brigham young': 'byu', 'southern methodist': 'smu',
+    'texas christian': 'tcu', 'central florida': 'ucf',
+    'connecticut': 'uconn', 'pittsburgh': 'pitt',
+    'appalachian state': 'appst', 'app state': 'appst',
+    'miami (fl)': 'miami',
+  };
+
+  // Map of teamId → AP rank for all top-25 teams
+  const apRankMap = useMemo(() => {
+    if (!apPoll.isLoaded || !apPoll.rankings?.length) return {};
+    const map = {};
+    apPoll.rankings.forEach(e => {
+      if (e.rank > 25) return;
+      const lower = e.school.toLowerCase();
+      const aliasId = AP_ALIASES[lower];
+      const team = aliasId
+        ? teams.find(t => t.id === aliasId)
+        : teams.find(t => t.name.toLowerCase() === lower);
+      if (team) map[team.id] = e.rank;
+    });
+    return map;
+  }, [teams]);
+
+  const apRank = apRankMap[teamId] ?? null;
 
   const historicalRecords = useMemo(() => {
     let nattyYears = [], confYears = [], totalWins = 0, totalLosses = 0;
@@ -230,6 +259,11 @@ function TeamPage({ teams, schedule, results, onPick, playoffData, liveResults =
               
               <div className="flex flex-col">
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-1">
+                  {apRank && (
+                    <span className="bg-white/20 backdrop-blur-sm text-white font-black text-sm px-3 py-1 rounded-full drop-shadow-md border border-white/30">
+                      AP #{apRank}
+                    </span>
+                  )}
                   {playoffSeed && (
                     <span className="text-white font-black uppercase tracking-widest text-sm drop-shadow-md opacity-80">CFP Seed #{playoffSeed}</span>
                   )}
@@ -347,6 +381,9 @@ function TeamPage({ teams, schedule, results, onPick, playoffData, liveResults =
                         <Link to={`/team/${opponent.id}`} className="transition-colors duration-200 hover:opacity-70">{opponent.name}</Link>
                       ) : (
                         <span className="text-slate-400">{opponent.name}</span>
+                      )}
+                      {apRankMap[opponentId] && (
+                        <span className="text-sm font-black text-slate-400 leading-none">#{apRankMap[opponentId]}</span>
                       )}
                     </h3>
                   </div>

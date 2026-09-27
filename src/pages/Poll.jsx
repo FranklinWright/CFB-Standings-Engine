@@ -54,6 +54,17 @@ function Poll({ teams, schedule, results }) {
     });
   }, [selectedPollWeek]);
 
+  // Teams that were ranked last week but fell out of the top 25 this week
+  const droppedTeams = useMemo(() => {
+    const prevWeekKey = typeof selectedPollWeek === 'number' ? String(selectedPollWeek - 1) : null;
+    const prevWeekData = prevWeekKey ? (apPoll.history?.[prevWeekKey] ?? null) : null;
+    if (!prevWeekData || !displayedRankings.length) return [];
+    const currentSchools = new Set(displayedRankings.map(e => e.school));
+    return prevWeekData
+      .filter(e => !currentSchools.has(e.school))
+      .sort((a, b) => a.rank - b.rank);
+  }, [selectedPollWeek, displayedRankings]);
+
   // --- Projected poll: built from user picks ---
   const projectedTop25 = useMemo(() => {
     const stats = teams.map(t => ({ ...t, wins: 0, losses: 0 }));
@@ -371,6 +382,64 @@ function Poll({ teams, schedule, results }) {
                   </div>
                 )}
               </div>
+
+              {/* Dropped out of the poll this week */}
+              {droppedTeams.length > 0 && (
+                <div className="mt-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex-1 h-px bg-slate-200" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">
+                      Dropped Out
+                    </span>
+                    <div className="flex-1 h-px bg-slate-200" />
+                  </div>
+                  <div className="grid gap-2">
+                    {droppedTeams.map((entry) => {
+                      const appTeam = findAppTeam(entry.school);
+                      const card = (
+                        <div className="group bg-white/70 border border-gray-200 rounded-2xl p-3 md:p-4 flex items-center transition-all shadow-sm hover:shadow-md grid grid-cols-12 gap-2 opacity-70 hover:opacity-100">
+                          <div className="col-span-1 text-center">
+                            <span className="text-xl font-black italic text-slate-300">—</span>
+                          </div>
+                          <div className="col-span-6 flex items-center gap-3">
+                            {appTeam?.logo ? (
+                              <div className="w-10 h-10 shrink-0">
+                                <img
+                                  src={appTeam.logo}
+                                  alt={entry.school}
+                                  onError={(e) => { e.target.src = '/favicon.ico'; }}
+                                  className="w-full h-full object-contain drop-shadow-sm grayscale group-hover:grayscale-0 transition-all"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-10 h-10 shrink-0 bg-gray-100 rounded-full flex items-center justify-center text-slate-400 text-xs font-black">?</div>
+                            )}
+                            {appTeam && <div className="w-1.5 h-8 rounded-full hidden sm:block opacity-40" style={{ backgroundColor: appTeam.color }} />}
+                            <div>
+                              <p className="text-sm md:text-base font-black uppercase tracking-tight text-slate-500 leading-none">{entry.school}</p>
+                              <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{entry.conference}</p>
+                            </div>
+                          </div>
+                          <div className="col-span-2 text-center hidden sm:block">
+                            <span className="inline-flex items-center gap-0.5 text-[10px] font-black text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                              ▼ Was #{entry.rank}
+                            </span>
+                          </div>
+                          <div className="col-span-2 text-center hidden sm:block" />
+                          <div className="col-span-3 sm:col-span-1 text-right" />
+                        </div>
+                      );
+                      const key = `dropped-${entry.school}`;
+                      return appTeam ? (
+                        <Link key={key} to={`/team/${appTeam.id}`} className="block">{card}</Link>
+                      ) : (
+                        <div key={key}>{card}</div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
             </>
           )}
         </div>

@@ -7,6 +7,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { apPoll } from '../data/apPoll';
 
 /**
  * TeamsDirectory Component
@@ -74,15 +75,31 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
     });
   }, [teams, masterSchedule, results]);
 
-  // 2. Calculate Top 25 National Ranks (Excluding FCS)
+  const AP_ALIASES = {
+    'ole miss': 'miss', 'mississippi': 'miss',
+    'southern california': 'usc', 'louisiana state': 'lsu',
+    'brigham young': 'byu', 'southern methodist': 'smu',
+    'texas christian': 'tcu', 'central florida': 'ucf',
+    'connecticut': 'uconn', 'pittsburgh': 'pitt',
+    'appalachian state': 'appst', 'app state': 'appst',
+    'miami (fl)': 'miami',
+  };
+
+  // 2. National Ranks from AP Poll (top 25 only)
   const nationalRanks = useMemo(() => {
-    const sorted = [...allTeamStats]
-      .filter(t => t.conf !== 'FCS/Other')
-      .sort((a, b) => b.wins - a.wins || b.rating - a.rating);
-    const ranks = {};
-    sorted.forEach((t, i) => { ranks[t.id] = i + 1; });
-    return ranks;
-  }, [allTeamStats]);
+    if (!apPoll.isLoaded || !apPoll.rankings?.length) return {};
+    const map = {};
+    apPoll.rankings.forEach(e => {
+      if (e.rank > 25) return;
+      const lower = e.school.toLowerCase();
+      const aliasId = AP_ALIASES[lower];
+      const team = aliasId
+        ? teams.find(t => t.id === aliasId)
+        : teams.find(t => t.name.toLowerCase() === lower);
+      if (team) map[team.id] = e.rank;
+    });
+    return map;
+  }, [teams]);
 
   // 3. Filter and Sort logic
   const filteredTeams = useMemo(() => {
@@ -104,16 +121,18 @@ function TeamsDirectory({ teams = [], masterSchedule = [], results = {}, onSimul
       result.sort((a, b) => a.name.localeCompare(b.name));
     } else {
       result.sort((a, b) => {
-        // Strict sorting by wins/power, no SEC/Big Ten search bias
-        const aHasFullSchedule = a.totalGames >= 12;
-        const bHasFullSchedule = b.totalGames >= 12;
-        if (aHasFullSchedule && !bHasFullSchedule) return -1;
-        if (!aHasFullSchedule && bHasFullSchedule) return 1;
-        return b.winPct - a.winPct || b.wins - a.wins || b.rating - a.rating;
+        const aRank = nationalRanks[a.id];
+        const bRank = nationalRanks[b.id];
+        // AP-ranked teams come first, in AP rank order
+        if (aRank && bRank) return aRank - bRank;
+        if (aRank) return -1;
+        if (bRank) return 1;
+        // Unranked: sort by wins then rating
+        return b.wins - a.wins || b.rating - a.rating;
       });
     }
     return result;
-  }, [allTeamStats, search, selectedConf, sortBy]);
+  }, [allTeamStats, search, selectedConf, sortBy, nationalRanks]);
 
   const simModes = [
     { id: 'realistic', label: 'Realistic Sim', desc: 'Ratings + Home Field + Random Upsets', icon: '🎯' },

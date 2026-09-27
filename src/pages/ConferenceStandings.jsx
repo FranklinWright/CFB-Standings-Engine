@@ -6,6 +6,7 @@
 
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { apPoll } from '../data/apPoll';
 
 /**
  * ConferenceStandings Component
@@ -24,27 +25,30 @@ function ConferenceStandings({ teams, schedule, results }) {
     return team.logo;
   };
 
-  /**
-   * Calculates national rankings for all non-FCS teams based on total wins
-   * and team rating (tie-breaker).
-   */
+  const AP_ALIASES = {
+    'ole miss': 'miss', 'mississippi': 'miss',
+    'southern california': 'usc', 'louisiana state': 'lsu',
+    'brigham young': 'byu', 'southern methodist': 'smu',
+    'texas christian': 'tcu', 'central florida': 'ucf',
+    'connecticut': 'uconn', 'pittsburgh': 'pitt',
+    'appalachian state': 'appst', 'app state': 'appst',
+    'miami (fl)': 'miami',
+  };
+
   const nationalRanks = useMemo(() => {
-    const stats = teams.map(t => {
-      let wins = 0;
-      schedule.forEach(game => {
-        if (results[game.id] === t.id) wins++;
-      });
-      return { id: t.id, wins, rating: t.rating, conf: t.conf };
+    if (!apPoll.isLoaded || !apPoll.rankings?.length) return {};
+    const map = {};
+    apPoll.rankings.forEach(e => {
+      if (e.rank > 25) return;
+      const lower = e.school.toLowerCase();
+      const aliasId = AP_ALIASES[lower];
+      const team = aliasId
+        ? teams.find(t => t.id === aliasId)
+        : teams.find(t => t.name.toLowerCase() === lower);
+      if (team) map[team.id] = e.rank;
     });
-
-    // Remove FCS from top 25 rankings logic
-    const filteredStats = stats.filter(t => t.conf !== 'FCS/Other');
-    filteredStats.sort((a, b) => b.wins - a.wins || b.rating - a.rating);
-
-    const ranks = {};
-    filteredStats.forEach((t, i) => ranks[t.id] = i + 1);
-    return ranks;
-  }, [teams, schedule, results]);
+    return map;
+  }, [teams]);
 
   /**
    * Aggregates standings data. Filters out 'FCS/Other', calculates
