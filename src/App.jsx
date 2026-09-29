@@ -18,6 +18,7 @@ import ConferenceStandings from './pages/ConferenceStandings';
 import PlayoffBracket from './pages/PlayoffBracket';
 import NotFound from './pages/NotFound';
 import Schedule from './pages/Schedule';
+import GamePage from './pages/GamePage';
 
 /**
  * ScrollToTop Component
@@ -532,7 +533,8 @@ function App() {
             <Route path="/teams" element={<TeamsDirectory teams={teams} masterSchedule={masterSchedule} results={effectiveResults} onSimulate={runSimulation} />} />
             <Route path="/postseason" element={<PlayoffBracket playoffData={playoffData} teams={teams} results={effectiveResults} onPick={handlePick} />} />
             <Route path="/team/:teamId" element={<TeamPage teams={teams} schedule={masterSchedule} results={effectiveResults} onPick={handlePick} playoffData={playoffData} liveResults={liveResultsData} />} />
-            
+            <Route path="/game/:gameId" element={<GamePage teams={teams} schedule={masterSchedule} />} />
+
             {/* Catch-all route for the 404 page */}
             <Route path="*" element={<NotFound />} />
           </Routes>

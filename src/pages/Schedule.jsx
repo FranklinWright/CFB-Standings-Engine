@@ -209,6 +209,7 @@ function Schedule({ teams, schedule, results, onPick, liveResults = {} }) {
                   FINAL
                 </span>
                 <span className="text-[7px] text-slate-400 uppercase tracking-wider">{game.date}</span>
+                <Link to={`/game/${game.id}`} className="text-[7px] font-black uppercase tracking-widest text-[#25bee8] hover:underline mt-0.5">Stats →</Link>
               </>
             ) : (
               <>

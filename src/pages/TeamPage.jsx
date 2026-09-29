@@ -10,6 +10,9 @@ import { historicalData } from '../data/history';
 import { isPastDate } from '../data/weekMap';
 import { liveScores } from '../data/liveResults';
 import { apPoll } from '../data/apPoll';
+import { coaches } from '../data/coaches';
+import { playerStats as allPlayerStats } from '../data/playerStats';
+import { teamSeasonStats as allTeamSeasonStats } from '../data/teamSeasonStats';
 
 /**
  * TeamPage Component
@@ -72,9 +75,15 @@ function TeamPage({ teams, schedule, results, onPick, playoffData, liveResults =
 
   const teamStats = useMemo(() => {
     let wins = 0; let losses = 0;
-    schedule.forEach(game => { if (results[game.id]) { if (results[game.id] === teamId) wins++; else if (game.home === teamId || game.away === teamId) losses++; } });
+    schedule.forEach(game => {
+      const finalWinner = liveResults[game.id];
+      if (finalWinner) {
+        if (finalWinner === teamId) wins++;
+        else if (game.home === teamId || game.away === teamId) losses++;
+      }
+    });
     return { wins, losses };
-  }, [schedule, results, teamId]);
+  }, [schedule, liveResults, teamId]);
 
   const teamGames = useMemo(() => {
     const regGames = schedule.filter(g => g.home === teamId || g.away === teamId);
@@ -296,11 +305,17 @@ function TeamPage({ teams, schedule, results, onPick, playoffData, liveResults =
                 >
                   2026 Season
                 </button>
-                <button 
+                <button
                   onClick={() => setActiveTab('legacy')}
                   className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'legacy' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-black/20'}`}
                 >
                   Legacy & History
+                </button>
+                <button
+                  onClick={() => setActiveTab('stats')}
+                  className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'stats' ? 'bg-white text-slate-900 shadow-md' : 'text-white/80 hover:text-white hover:bg-black/20'}`}
+                >
+                  Player Stats
                 </button>
               </div>
             </div>
@@ -310,7 +325,7 @@ function TeamPage({ teams, schedule, results, onPick, playoffData, liveResults =
           {/* DYNAMIC RECORD BOX: Shows Projected or All-Time based on Tab */}
           <div className={`p-8 rounded-[2.5rem] text-center shadow-2xl min-w-[240px] transition-colors duration-700 ${isChampionTheme ? 'bg-yellow-50' : 'bg-white'}`}>
             <p className={`text-[10px] uppercase font-black mb-2 tracking-widest ${isChampionTheme ? 'text-yellow-700' : 'text-slate-400'}`}>
-              {activeTab === 'season' ? 'PROJECTED RECORD' : 'ALL-TIME RECORD'}
+              {activeTab === 'season' ? '2026 RECORD' : 'ALL-TIME RECORD'}
             </p>
             <p className={`text-7xl font-black tracking-tighter ${isChampionTheme ? 'text-yellow-600' : 'text-slate-950'}`}>
               {activeTab === 'season' ? (
@@ -389,13 +404,13 @@ function TeamPage({ teams, schedule, results, onPick, playoffData, liveResults =
                   </div>
 
                   {isLocked ? (
-                    <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-2xl w-full md:w-auto justify-center md:justify-end">
+                    <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-2xl w-full md:w-auto justify-center md:justify-end flex-wrap">
                       {(() => {
                         const score = liveScores[game.id];
                         const isTeamHome = game.home === teamId;
                         const myScore = score ? (isTeamHome ? score.home : score.away) : null;
                         const theirScore = score ? (isTeamHome ? score.away : score.home) : null;
-                        const won = userSelection === teamId;
+                        const won = isFinal ? liveResults[game.id] === teamId : userSelection === teamId;
                         return (
                           <>
                             {isFinal ? (
@@ -412,6 +427,11 @@ function TeamPage({ teams, schedule, results, onPick, playoffData, liveResults =
                               <span className={`text-base font-black uppercase ${won ? 'text-green-600' : 'text-red-500'}`}>
                                 {won ? 'W' : 'L'}
                               </span>
+                            )}
+                            {typeof game.id === 'number' && (
+                              <Link to={`/game/${game.id}`} className="text-[8px] font-black uppercase tracking-widest text-[#25bee8] hover:underline">
+                                Stats →
+                              </Link>
                             )}
                           </>
                         );
@@ -434,6 +454,22 @@ function TeamPage({ teams, schedule, results, onPick, playoffData, liveResults =
               );
             })}
           </div>
+
+          {/* Coaching Staff */}
+          {/* {coaches[teamId] && (
+            <div className={`mt-8 rounded-3xl p-6 shadow-sm border transition-colors duration-700 ${isChampionTheme ? 'bg-yellow-50 border-yellow-400' : 'bg-white border-gray-100'}`}>
+              <h2 className={`text-[10px] font-black uppercase tracking-[0.3em] mb-4 ${isChampionTheme ? 'text-yellow-600' : 'text-slate-400'}`}>Coaching Staff</h2>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shadow-sm" style={{ backgroundColor: team?.color + '20' }}>
+                  🏈
+                </div>
+                <div>
+                  <p className="font-black text-slate-900 text-lg">{coaches[teamId].headCoach}</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Head Coach · 2026</p>
+                </div>
+              </div>
+            </div>
+          )} */}
         </div>
       )}
 
@@ -691,7 +727,159 @@ function TeamPage({ teams, schedule, results, onPick, playoffData, liveResults =
       )}
 
       {/* =========================================================
-                          MINIGAME MODAL OVERLAY 
+                          TAB 3: PLAYER STATS
+          ========================================================= */}
+      {activeTab === 'stats' && (() => {
+        const ps = allPlayerStats[teamId] || {};
+        const ts = allTeamSeasonStats[teamId] || {};
+        const games = ts.games || 1;
+        const hasData = Object.keys(ps).length > 0;
+        const fmt = (n) => n != null ? String(n) : '—';
+        const pct = (n, d) => d > 0 ? ((n / d) * 100).toFixed(0) + '%' : '—';
+
+        return (
+          <div className="max-w-4xl mx-auto px-6 animate-fade-in relative z-20 space-y-6">
+
+            {/* Team Season Totals */}
+            {Object.keys(ts).length > 0 && (
+              <div className={`-mt-8 rounded-3xl p-6 shadow-xl border transition-colors duration-700 ${isChampionTheme ? 'bg-yellow-50 border-yellow-400' : 'bg-white border-gray-100'}`}>
+                <h2 className={`text-[10px] font-black uppercase tracking-[0.3em] mb-5 ${isChampionTheme ? 'text-yellow-600' : 'text-slate-400'}`}>2026 Team Stats · {games} Games</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { label: 'Total Yds/G', val: ts.totalYards != null ? Math.round(ts.totalYards / games) : null },
+                    { label: 'Rush Yds/G', val: ts.rushingYards != null ? Math.round(ts.rushingYards / games) : null },
+                    { label: 'Pass Yds/G', val: ts.netPassingYards != null ? Math.round(ts.netPassingYards / games) : null },
+                    { label: 'Points/G', val: ts.points != null ? (ts.points / games).toFixed(1) : null },
+                    { label: '3rd Down %', val: ts.thirdDownConversions != null ? pct(ts.thirdDownConversions, ts.thirdDowns) : null },
+                    { label: 'Sacks', val: ts.sacks },
+                    { label: 'TFL', val: ts.tacklesForLoss },
+                    { label: 'Turnovers', val: ts.turnovers },
+                  ].filter(s => s.val != null).map(({ label, val }) => (
+                    <div key={label} className="text-center">
+                      <p className="text-3xl font-black text-slate-900 tabular-nums">{val}</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-0.5">{label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!hasData && (
+              <div className={`-mt-8 rounded-3xl p-10 shadow-xl border text-center ${isChampionTheme ? 'bg-yellow-50 border-yellow-400' : 'bg-white border-gray-100'}`}>
+                <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No player stats available yet.</p>
+                <p className="text-slate-300 text-xs font-mono mt-2">Run the fetch script to populate stats.</p>
+              </div>
+            )}
+
+            {/* Passing */}
+            {ps.passing?.length > 0 && (
+              <div className={`rounded-3xl overflow-hidden shadow-sm border ${isChampionTheme ? 'border-yellow-400' : 'border-gray-100'}`}>
+                <div className="px-6 py-4 font-black text-[10px] uppercase tracking-[0.3em] text-white flex items-center gap-2" style={{ backgroundColor: team?.color }}>
+                  🏈 Passing
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {ps.passing.slice(0, 5).map((p, i) => (
+                    <div key={i} className={`flex items-center justify-between px-6 py-4 ${isChampionTheme ? 'bg-yellow-50' : 'bg-white'}`}>
+                      <div>
+                        <p className="font-black text-slate-900">{p.player}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                          {fmt(p.COMPLETIONS)}/{fmt(p.ATT)} · {p.PCT ? (parseFloat(p.PCT)*100).toFixed(1)+'%' : '—'} · {fmt(p.YPA)} YPA
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4 text-right">
+                        <div><p className="text-xl font-black text-slate-900 tabular-nums">{fmt(p.YDS)}</p><p className="text-[8px] text-slate-400 font-black uppercase">YDS</p></div>
+                        <div><p className="text-xl font-black text-green-600 tabular-nums">{fmt(p.TD)}</p><p className="text-[8px] text-slate-400 font-black uppercase">TD</p></div>
+                        <div><p className="text-xl font-black text-red-400 tabular-nums">{fmt(p.INT)}</p><p className="text-[8px] text-slate-400 font-black uppercase">INT</p></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Rushing */}
+            {ps.rushing?.length > 0 && (
+              <div className={`rounded-3xl overflow-hidden shadow-sm border ${isChampionTheme ? 'border-yellow-400' : 'border-gray-100'}`}>
+                <div className="px-6 py-4 font-black text-[10px] uppercase tracking-[0.3em] text-white flex items-center gap-2" style={{ backgroundColor: team?.color }}>
+                  🏃 Rushing
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {ps.rushing.slice(0, 5).map((p, i) => (
+                    <div key={i} className={`flex items-center justify-between px-6 py-4 ${isChampionTheme ? 'bg-yellow-50' : 'bg-white'}`}>
+                      <div>
+                        <p className="font-black text-slate-900">{p.player}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                          {fmt(p.CAR)} CAR · {fmt(p.YPC)} YPC · Long {fmt(p.LONG)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4 text-right">
+                        <div><p className="text-xl font-black text-slate-900 tabular-nums">{fmt(p.YDS)}</p><p className="text-[8px] text-slate-400 font-black uppercase">YDS</p></div>
+                        <div><p className="text-xl font-black text-green-600 tabular-nums">{fmt(p.TD)}</p><p className="text-[8px] text-slate-400 font-black uppercase">TD</p></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Receiving */}
+            {ps.receiving?.length > 0 && (
+              <div className={`rounded-3xl overflow-hidden shadow-sm border ${isChampionTheme ? 'border-yellow-400' : 'border-gray-100'}`}>
+                <div className="px-6 py-4 font-black text-[10px] uppercase tracking-[0.3em] text-white flex items-center gap-2" style={{ backgroundColor: team?.color }}>
+                  🙌 Receiving
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {ps.receiving.slice(0, 5).map((p, i) => (
+                    <div key={i} className={`flex items-center justify-between px-6 py-4 ${isChampionTheme ? 'bg-yellow-50' : 'bg-white'}`}>
+                      <div>
+                        <p className="font-black text-slate-900">{p.player}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                          {fmt(p.REC)} REC · {p.YPR || p.AVG || '—'} YPR · Long {fmt(p.LONG)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4 text-right">
+                        <div><p className="text-xl font-black text-slate-900 tabular-nums">{fmt(p.YDS)}</p><p className="text-[8px] text-slate-400 font-black uppercase">YDS</p></div>
+                        <div><p className="text-xl font-black text-green-600 tabular-nums">{fmt(p.TD)}</p><p className="text-[8px] text-slate-400 font-black uppercase">TD</p></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Defense */}
+            {ps.defensive?.length > 0 && (
+              <div className={`rounded-3xl overflow-hidden shadow-sm border ${isChampionTheme ? 'border-yellow-400' : 'border-gray-100'}`}>
+                <div className="px-6 py-4 font-black text-[10px] uppercase tracking-[0.3em] text-white flex items-center gap-2" style={{ backgroundColor: team?.color }}>
+                  🛡️ Defense
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {ps.defensive.slice(0, 7).map((p, i) => (
+                    <div key={i} className={`flex items-center justify-between px-6 py-4 ${isChampionTheme ? 'bg-yellow-50' : 'bg-white'}`}>
+                      <div>
+                        <p className="font-black text-slate-900">{p.player}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                          {fmt(p.SOLO)} Solo · {fmt(p.TFL)} TFL · {fmt(p['QB HUR'])} HUR · {fmt(p.PD)} PD
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4 text-right">
+                        <div><p className="text-xl font-black text-slate-900 tabular-nums">{fmt(p.TOT)}</p><p className="text-[8px] text-slate-400 font-black uppercase">TAC</p></div>
+                        <div><p className="text-xl font-black text-slate-600 tabular-nums">{fmt(p.SACKS)}</p><p className="text-[8px] text-slate-400 font-black uppercase">SCK</p></div>
+                        {parseFloat(p.INT) > 0 && <div><p className="text-xl font-black text-[#25bee8] tabular-nums">{fmt(p.INT)}</p><p className="text-[8px] text-slate-400 font-black uppercase">INT</p></div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="h-4" />
+          </div>
+        );
+      })()}
+
+      {/* =========================================================
+                          MINIGAME MODAL OVERLAY
           ========================================================= */}
       {showMinigame && (
         <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4">
