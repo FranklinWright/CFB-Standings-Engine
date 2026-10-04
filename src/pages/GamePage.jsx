@@ -94,8 +94,8 @@ function GamePage({ teams, schedule }) {
   const preGameRankMap = useMemo(() => {
     if (!game) return {};
     const gameWeek = getGameWeek(game.date);
-    // Use prev week's poll — week 1 games fall back to the week-1 poll itself
-    const histKey = String(Math.max(1, gameWeek - 1));
+    // Use the poll that was current FOR this game week (CFBD stores it as history[gameWeek])
+    const histKey = String(gameWeek);
     const hist = apPoll.history?.[histKey] ?? [];
     const map = {};
     hist.forEach(e => {

@@ -737,7 +737,7 @@ export const teams = [
   { id: 'x_montana', name: "Montana", conf: "FCS/Other", color: "#660000", rating: 68,
     logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/149.png",
     description: "The Montana Grizzlies are a dominant FCS powerhouse with a massive, passionate fanbase in Missoula." },
-  { id: 'x_northdakotastate', name: "North Dakota State", conf: "FCS/Other", color: "#0A5640", rating: 72,
+  { id: 'x_northdakotastate', name: "North Dakota State", conf: "Mountain West", color: "#0A5640", rating: 72,
     logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2449.png",
     description: "The North Dakota State Bison are an FCS dynasty, claiming numerous national championships in the modern era." },
   { id: 'x_presbyterian', name: "Presbyterian", conf: "FCS/Other", color: "#00205B", rating: 45,

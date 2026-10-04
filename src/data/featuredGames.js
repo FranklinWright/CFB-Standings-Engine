@@ -70,4 +70,29 @@ export const featuredGames = {
     abcNight: true,
     summary: `Death Valley turned into a nightmare for #9 Texas A&M under the Saturday night lights on ABC. #7 LSU delivered their most complete performance of the season, especially in a third quarter where they outscored the Aggies 21–0 to blow the game wide open. Texas A&M, who entered with legitimate SEC title hopes, was held to just two field goals the entire night — a stunning offensive collapse against an LSU defense operating at an elite level. The 35–6 final was a statement win that vaulted LSU into the top tier of the SEC and left A&M searching for answers heading into the meat of conference play.`,
   },
+
+  // ── Week 5: Oct 3 ────────────────────────────────────────────────────────
+  // ABC Night: #3 Notre Dame at North Carolina (Chapel Hill)
+  355: {
+    abcNight: true,
+    summary: `Under the Saturday night lights on ABC, #3 Notre Dame traveled to Chapel Hill for a battle that North Carolina hoped would be their program-defining moment — and for long stretches they nearly delivered. The Fighting Irish found themselves in a real fight, with the Tar Heels matching them score for score through the first three quarters. But Notre Dame's depth and composure showed when it mattered most, with a 10-point fourth quarter sealing a 37–26 road win. The victory kept the Fighting Irish locked in at #3 in the AP poll and sent a clear message: this Notre Dame squad has the tools to make a deep playoff run. For North Carolina, a valiant effort on the biggest national stage of their season.`,
+  },
+
+  // ESPN GameDay + FOX Big Noon: #7 Ohio State at #14 Iowa (Iowa City)
+  360: {
+    gameDay: true,
+    bigNoon: true,
+    summary: `College GameDay and the Big Noon Kickoff both landed in Iowa City for one of the most anticipated Big Ten matchups of the young season, as #14 Iowa welcomed #7 Ohio State to Kinnick Stadium. The Hawkeyes gave the hostile crowd early reasons to believe, but Ohio State's offense was too much — scoring 10 in the first quarter to set the tone before their defense completely strangled Iowa's offense for two and a half quarters. Iowa went scoreless in both the second and third quarters as the Buckeyes methodically extended the lead. The 31–14 final was a convincing statement from an Ohio State team that has steadily rebuilt its national standing since the Week 2 loss to Texas.`,
+  },
+
+  // ABC Saturday Night: #6 Miami at Clemson (Clemson, SC)
+  354: {
+    abcNight: true,
+    summary: `#6 Miami rolled into Death Valley and completely took it over under the Saturday night lights, delivering one of the most dominant performances of the week 5 slate. The Hurricanes were clinical in the first three quarters before exploding for 17 fourth-quarter points to turn a manageable game into a 41–13 blowout. Clemson, who had entered with some momentum, managed only two field goals through three quarters as Miami's defense suffocated their offense. The performance sent Miami skyrocketing up the national rankings and made a loud statement about their ACC title ambitions. Death Valley rarely looks this quiet.`,
+  },
+
+  // UPSET of the week: Michigan at Minnesota
+  361: {
+    summary: `In the biggest upset of Week 5, Minnesota stunned Michigan 20–14 in a game that completely flipped on its head in the second half. The Wolverines grabbed a commanding 14–7 halftime lead after a dominant second quarter, seemingly in full control. Then Minnesota's defense turned into a wall. Michigan went scoreless in both the third and fourth quarters — not a single point — while the Gophers chipped away with a third-quarter field goal and then a 10-point fourth quarter to steal the victory. The upset sent shockwaves through the Big Ten standings and raised serious questions about Michigan's path forward in the conference race.`,
+  },
 };
