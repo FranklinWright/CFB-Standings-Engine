@@ -95,4 +95,33 @@ export const featuredGames = {
   361: {
     summary: `In the biggest upset of Week 5, Minnesota stunned Michigan 20–14 in a game that completely flipped on its head in the second half. The Wolverines grabbed a commanding 14–7 halftime lead after a dominant second quarter, seemingly in full control. Then Minnesota's defense turned into a wall. Michigan went scoreless in both the third and fourth quarters — not a single point — while the Gophers chipped away with a third-quarter field goal and then a 10-point fourth quarter to steal the victory. The upset sent shockwaves through the Big Ten standings and raised serious questions about Michigan's path forward in the conference race.`,
   },
+
+  // ── Week 6: Oct 10 ───────────────────────────────────────────────────────
+  // ESPN GameDay + ABC Night: #2 Georgia at #6 Alabama (Tuscaloosa)
+  400: {
+    gameDay: true,
+    abcNight: true,
+    summary: `College GameDay descended on Tuscaloosa for one of the premier matchups in college football — #2 Georgia traveling to face #6 Alabama in Bryant-Denny Stadium. Alabama came out firing, dominating the second quarter with 14 points to take a 14–10 halftime lead and silence the doubters who thought Georgia's defense was elite. But the Bulldogs responded with exactly the kind of composure that defines championship-caliber programs — grinding out two second-half scoring drives while their defense completely shut down Alabama over the final two quarters, holding them scoreless after the half. Georgia's 20–17 road win over Alabama was statement enough: they are the new number one team in the country and the clear frontrunner for the College Football Playoff.`,
+  },
+
+  // FOX Big Noon: #1 Texas at Oklahoma (Norman)
+  405: {
+    bigNoon: true,
+    summary: `The biggest story of the college football season dropped on a Saturday morning in Norman. #1 Texas strutted into Owen Field as heavy favorites, and for a half it showed — the Longhorns built a 17–7 halftime lead and looked every bit like the nation's top team. Then Oklahoma flipped a switch. The Sooners held Texas scoreless in the third quarter, chipped away, and then absolutely exploded for 17 fourth-quarter points compared to Texas's 7. With the final seconds ticking down, Oklahoma completed the 27–24 comeback upset over the top-ranked team in the country. The loss immediately vaporized Texas's #1 ranking and blew the College Football Playoff race wide open. For Sooner Nation, it was the biggest win of the season.`,
+  },
+
+  // UPSET: #10 LSU at Kentucky (OT)
+  403: {
+    summary: `Kentucky pulled off one of the most dramatic upsets of the season in overtime, stunning #10 LSU 35–34 in a game that had absolutely everything. The teams were locked at 27–27 through four quarters after Kentucky's defense stopped an LSU scoring drive late. In overtime, Kentucky delivered the knockout punch — a touchdown followed by a gutsy two-point conversion to take the 35–34 lead. LSU answered with a touchdown of their own but couldn't match the conversion, and the Wildcats held on to complete the stunning victory. The loss was devastating for LSU's playoff hopes and announced Kentucky as a genuine SEC contender.`,
+  },
+
+  // UPSET: South Carolina at #16 Florida
+  402: {
+    summary: `South Carolina delivered one of the more convincing upsets of the week, going into The Swamp and dismantling #16 Florida 38–19 with a performance that was never really in doubt. The Gamecocks scored in every quarter and were particularly dominant in the third, outscoring Florida 14–3 to put the game out of reach. Florida's offense, which had shown promise in previous weeks, was completely neutralized. The lopsided final was a stunning result for a Florida program that had playoff aspirations, and a massive statement for South Carolina heading into the SEC gauntlet.`,
+  },
+
+  // UPSET: #21 UCLA at #13 Oregon
+  423: {
+    summary: `In a tight, defensive battle in Eugene, #21 UCLA pulled off a narrow 17–15 upset over #13 Oregon that will have massive Big Ten implications. The Bruins built a 10–6 lead at halftime and then weathered a late Oregon push that cut the deficit to two. UCLA's defense made the stops it needed to down the stretch, preserving the two-point victory. Oregon, who had the conference's best record heading in, now faces an uphill battle for a spot in the Big Ten Championship Game. For UCLA, the road win over a top-15 opponent was a resume-defining result.`,
+  },
 };

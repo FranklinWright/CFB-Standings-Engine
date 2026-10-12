@@ -22,7 +22,7 @@ const AP_ALIASES = {
 
 const DATE_TO_WEEK = {
   'Sep 5': '1', 'Sep 12': '2', 'Sep 19': '3',
-  'Sep 26': '4', 'Oct 3': '5', 'Oct 10': '6',
+  'Sep 26': '4', 'Oct 3': '5', 'Oct 10': '6', 'Oct 17': '7',
 };
 
 // Build pre-game rank maps keyed by week
