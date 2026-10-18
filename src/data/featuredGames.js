@@ -124,4 +124,33 @@ export const featuredGames = {
   423: {
     summary: `In a tight, defensive battle in Eugene, #21 UCLA pulled off a narrow 17–15 upset over #13 Oregon that will have massive Big Ten implications. The Bruins built a 10–6 lead at halftime and then weathered a late Oregon push that cut the deficit to two. UCLA's defense made the stops it needed to down the stretch, preserving the two-point victory. Oregon, who had the conference's best record heading in, now faces an uphill battle for a spot in the Big Ten Championship Game. For UCLA, the road win over a top-15 opponent was a resume-defining result.`,
   },
+
+  // ── Week 8: Oct 17 ───────────────────────────────────────────────────────
+  // ESPN GameDay + ABC Night: #4 Ohio State at #5 Indiana (Bloomington)
+  481: {
+    gameDay: true,
+    abcNight: true,
+    summary: `College GameDay rolled into Bloomington for one of the biggest Big Ten showdowns of the decade — #4 Ohio State taking on unbeaten #5 Indiana in front of the loudest Memorial Stadium crowd in program history, with the game broadcast on ABC's Saturday Night Football. The Hoosiers gave everything they had in front of a delirious home crowd, and for most of the night it looked like it might be enough. Ohio State led by six going into the fourth quarter but Indiana found another gear, scoring 8 points including a gutsy two-point conversion to close within four. The Buckeyes' defense made the stop it needed to preserve a 19–15 victory. It was as tight as the scoreline suggests, but Ohio State left Bloomington with the win and their playoff case fully intact. For Indiana, a narrow loss to the fourth-ranked team in the country does nothing to dent their standing.`,
+  },
+
+  // FOX Big Noon: #2 Notre Dame at #8 BYU (Provo, UT)
+  465: {
+    bigNoon: true,
+    summary: `The FOX Big Noon Kickoff delivered one of the signature upsets of the 2026 college football season as #8 BYU knocked off #2 Notre Dame 28–24 in a raucous LaVell Edwards Stadium. The Cougars were electric in the first half, exploding for 14 second-quarter points to build a commanding 21–10 halftime lead. Notre Dame refused to go quietly — chipping away through the third quarter and mounting a furious fourth-quarter push to get within four points in the final minutes. But BYU's offense answered with a scoring drive of their own, and their defense held firm to seal the 28–24 victory. The loss punched a serious hole in Notre Dame's College Football Playoff case and sent BYU — who now sit at #2 in the country — rocketing into the national conversation as a legitimate contender.`,
+  },
+
+  // UPSET OF THE YEAR: Auburn at #1 Georgia (Athens)
+  457: {
+    summary: `In the most stunning result of the 2026 college football season, unranked Auburn traveled to Athens and toppled #1 Georgia 27–24 in a game that will be talked about for years. Georgia burst out of the gate with 14 first-quarter points and looked every bit the nation's top team. Then Auburn completely seized control — outscoring the Bulldogs 17–0 across the second and third quarters to build a 24–14 lead heading into the fourth. Georgia mounted one final push, scoring 10 points in the closing period to claw back to within three, but Auburn delivered a clutch field goal to seal the 27–24 victory. The loss shattered Georgia's #1 ranking and blew the College Football Playoff picture wide open. Miami, idle this weekend, inherits the top spot. For Auburn, it was the most electric win the program has produced in over a decade.`,
+  },
+
+  // DOMINANT RESULT: #6 Alabama at #14 Tennessee (Knoxville)
+  461: {
+    summary: `Neyland Stadium erupted as #14 Tennessee delivered a performance for the ages, shutting down #6 Alabama completely in the second half to win 26–10. Alabama actually clawed back from a 9–0 deficit to lead 10–9 at halftime, silencing the crowd momentarily. What followed was one of the most dominant 30 minutes of football the SEC had seen all season. Tennessee outscored Alabama 17–0 over the final two quarters — holding the Crimson Tide completely off the scoreboard — while playing clean, efficient offense to seal a convincing victory. The shutout second half sent Neyland into pandemonium and launched the Vols to #11 in the new AP Poll. For Alabama, the scoreless second half raised serious questions heading into the back half of the season.`,
+  },
+
+  // UPSET: Florida at #7 Texas (Austin)
+  462: {
+    summary: `Unranked Florida made the trip to Austin and stunned #7 Texas 27–24 in a result that completed one of the wildest upset Saturdays in recent memory. Texas looked every bit the ranked powerhouse early, building a 17–10 halftime lead. Then Florida's defense found another gear — holding Texas scoreless in the third quarter while the Gators tied it at 17. The final quarter was a see-saw battle, with Florida scoring a go-ahead touchdown while Texas could only manage a field goal in response. The upset sent Florida jumping into the AP Poll at #20 and knocked Texas from #7 all the way down to #19. It was the second time this season Texas had been beaten in Austin, putting the Longhorns in serious must-win territory for the rest of the year.`,
+  },
 };
