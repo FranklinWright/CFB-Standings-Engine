@@ -153,4 +153,33 @@ export const featuredGames = {
   462: {
     summary: `Unranked Florida made the trip to Austin and stunned #7 Texas 27–24 in a result that completed one of the wildest upset Saturdays in recent memory. Texas looked every bit the ranked powerhouse early, building a 17–10 halftime lead. Then Florida's defense found another gear — holding Texas scoreless in the third quarter while the Gators tied it at 17. The final quarter was a see-saw battle, with Florida scoring a go-ahead touchdown while Texas could only manage a field goal in response. The upset sent Florida jumping into the AP Poll at #20 and knocked Texas from #7 all the way down to #19. It was the second time this season Texas had been beaten in Austin, putting the Longhorns in serious must-win territory for the rest of the year.`,
   },
+
+  // ── Week 9: Oct 24 ───────────────────────────────────────────────────────
+  // ESPN GameDay + ABC Night: #6 Indiana at Michigan (Ann Arbor)
+  541: {
+    gameDay: true,
+    abcNight: true,
+    summary: `College GameDay descended on Ann Arbor for a loaded Big Ten showdown as #6 Indiana took on Michigan in the Big House on ABC's Saturday Night Football. What followed was one of the most defensive, tension-filled games of the season. Indiana grabbed an early 6–0 lead through two quarters and seemed in control — until Michigan's defense stiffened and scratched back to tie it 6–6 with a fourth-quarter field goal. The game went to overtime scoreless after regulation. Indiana's offense finally broke through in the extra session, punching in a touchdown while their defense stonewalled Michigan for the 13–6 victory. Winning on the road at Michigan in overtime was exactly the kind of résumé-building result that keeps Indiana in serious College Football Playoff contention — and launched them to #4 in the new AP Poll.`,
+  },
+
+  // FOX Big Noon: #2 BYU at UCF (Orlando, FL)
+  529: {
+    bigNoon: true,
+    summary: `The FOX Big Noon Kickoff brought #2 BYU to Orlando for what looked like a road showcase — and turned into one of the most stunning upsets of the 2026 season. BYU grabbed an early 7–0 lead but UCF's offense erupted for 17 second-quarter points to flip the script and take a 17–14 halftime lead. The teams traded blows through the third quarter and into the fourth, with BYU scratching back to tie it at 24 and force overtime. In OT, UCF was clinical — outscoring the Cougars 15–7 to complete the 39–31 comeback victory. BYU tumbles from #2 all the way to #8 in the aftermath. For UCF, it stands as the biggest win in program history and sent shockwaves through the Big 12 and the College Football Playoff picture.`,
+  },
+
+  // DOMINANT: Pitt at #1 Miami (Miami Gardens, FL)
+  537: {
+    summary: `#1 Miami made a statement on their home turf, dismantling Pitt 52–23 in a performance that left no doubt about their status as the nation's best team. The Hurricanes were methodical and relentless — jumping out 10–0, exploding for 21 second-quarter points, and adding 14 more in the third to put the game completely out of reach. Pitt was never able to establish any kind of rhythm against Miami's defense, and the 29-point final margin was an accurate reflection of the gap between the two teams. Miami maintains their iron grip on #1 and the inside track to the ACC Championship Game.`,
+  },
+
+  // UPSET: #8 Texas Tech at Cincinnati
+  534: {
+    summary: `Cincinnati delivered one of the more convincing upsets of Week 9, dismantling #8 Texas Tech 37–24 in a game that was over by halftime. The Red Raiders took an early 6–3 lead, but Cincinnati responded with a 21-point second quarter to take a commanding 24–6 advantage at the break. Texas Tech clawed back with a respectable second half — outscoring the Bearcats 18–13 over the final two quarters — but could never close the deficit. The final 37–24 result sent Texas Tech tumbling from #8 to #13 and was a massive statement win for Cincinnati on their home turf.`,
+  },
+
+  // UPSET: #11 Tennessee at South Carolina (Columbia, SC)
+  526: {
+    summary: `South Carolina authored a dramatic comeback to upset #11 Tennessee 27–24 in a game that swung momentum multiple times. The Gamecocks jumped out fast with 14 first-quarter points, but Tennessee's offense erupted for 21 unanswered second-quarter points to seize a 21–17 halftime lead. A scoreless third quarter kept the Vols in control heading to the fourth — but South Carolina found a second wind, scoring 10 fourth-quarter points while holding Tennessee to just a field goal. The 27–24 final was Tennessee's second consecutive loss to an unranked opponent and sent them tumbling to #16. For South Carolina, a comeback victory over a top-15 team was exactly the kind of signature win that changes a program's trajectory.`,
+  },
 };
