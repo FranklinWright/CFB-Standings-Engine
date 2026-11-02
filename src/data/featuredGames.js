@@ -155,6 +155,7 @@ export const featuredGames = {
   },
 
   // ── Week 9: Oct 24 ───────────────────────────────────────────────────────
+  // Note: week 9 featured game entries appear below this section header
   // ESPN GameDay + ABC Night: #6 Indiana at Michigan (Ann Arbor)
   541: {
     gameDay: true,
@@ -181,5 +182,29 @@ export const featuredGames = {
   // UPSET: #11 Tennessee at South Carolina (Columbia, SC)
   526: {
     summary: `South Carolina authored a dramatic comeback to upset #11 Tennessee 27–24 in a game that swung momentum multiple times. The Gamecocks jumped out fast with 14 first-quarter points, but Tennessee's offense erupted for 21 unanswered second-quarter points to seize a 21–17 halftime lead. A scoreless third quarter kept the Vols in control heading to the fourth — but South Carolina found a second wind, scoring 10 fourth-quarter points while holding Tennessee to just a field goal. The 27–24 final was Tennessee's second consecutive loss to an unranked opponent and sent them tumbling to #16. For South Carolina, a comeback victory over a top-15 team was exactly the kind of signature win that changes a program's trajectory.`,
+  },
+
+  // ── Week 10: Oct 31 ──────────────────────────────────────────────────────
+  // ESPN GameDay: Minnesota at #4 Indiana (Bloomington, IN)
+  595: {
+    gameDay: true,
+    summary: `College GameDay set up in Bloomington for the second time this season as #4 Indiana hosted Minnesota — and the Hoosiers delivered another overtime thriller for the nation watching. Indiana jumped out to a 7–3 first-quarter lead, but the Gophers' defense seized control through the second quarter to take a 10–7 halftime advantage. A scoreless third quarter from both offenses gave way to a tense fourth, with each team trading 6-point drives to knot it at 16 and force overtime. In OT, Indiana was resolute — scoring a touchdown while their defense stuffed Minnesota completely to win 23–16. It was another signature clutch performance from the Hoosiers, who seem to relish the biggest stages. Indiana's playoff résumé grows more impressive by the week.`,
+  },
+
+  // ABC Night: #2 Ohio State at USC (Los Angeles, CA)
+  603: {
+    abcNight: true,
+    summary: `In one of the biggest upsets of the 2026 college football season, USC dismantled #2 Ohio State 30–18 in the LA Coliseum under the Saturday night lights on ABC — and it was never as close as the final score suggests. The Trojans came out on fire, racing to a 14–3 first-quarter lead that set the tone for the entire game. Ohio State closed the gap to 20–9 at halftime but couldn't slow USC's momentum. The third quarter was all Trojans — USC scored 7 while holding the Buckeyes completely scoreless to push the lead to 27–9. Ohio State salvaged some pride with 9 fourth-quarter points, but USC added a field goal to close out the 30–18 statement win. Ohio State tumbles from #2 to #11 — their path to the College Football Playoff just got considerably more complicated.`,
+  },
+
+  // FOX Big Noon: Florida at #3 Georgia (Atlanta, GA — neutral site)
+  578: {
+    bigNoon: true,
+    summary: `Georgia turned the World's Largest Outdoor Cocktail Party into a beatdown, crushing Florida 27–8 in Atlanta in one of the most lopsided editions of the rivalry in recent memory. The Bulldogs were methodical from the opening series — scoring in each of their first two possessions and then absolutely pouring it on with 17 second-quarter points to build an insurmountable 24–0 halftime lead. Florida's offense was completely neutralized through three quarters, with the Gators not putting points on the board until garbage time in the fourth. The dominant performance vaulted Georgia to #2 in the new poll and was exactly the statement win the Bulldogs needed after their early stumble against Auburn.`,
+  },
+
+  // NAIL-BITER: #1 Miami at UNC (Chapel Hill, NC)
+  592: {
+    summary: `#1 Miami was tested for four quarters at Chapel Hill, holding off a relentless UNC squad 38–35 in a road shootout that went down to the wire. The Hurricanes led throughout — taking a 7–0 first-quarter advantage before UNC erupted for 14 second-quarter points to claw back to 14–17 at the half. The third quarter remained tight, with Miami extending the cushion to 24–21, but the fourth turned into an all-out scoring war. Both teams exchanged touchdown drives in a frantic closing stretch that saw 28 combined fourth-quarter points, with Miami maintaining their slim three-point lead to escape 38–35. UNC had every chance to knock off the nation's top team on their home turf and came painfully close. Miami stays #1 — but questions about their defense on the road will follow them into the stretch run.`,
   },
 };
