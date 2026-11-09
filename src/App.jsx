@@ -10,6 +10,15 @@ import { teams, masterSchedule } from './data/teams';
 import { liveResults as liveResultsData } from './data/liveResults';
 import { isPastDate } from './data/weekMap';
 import { apPoll } from './data/apPoll';
+import { cfpPoll } from './data/cfpPoll';
+
+const PLAYOFF_CONF_PRESTIGE = {
+  'SEC': 1.10, 'Big Ten': 1.08,
+  'ACC': 1.03, 'Big 12': 1.03,
+  'Pac-12': 1.00, 'Independent': 1.00,
+  'American': 0.94, 'Mountain West': 0.92,
+  'Sun Belt': 0.87, 'MAC': 0.86, 'CUSA': 0.84,
+};
 import Home from './pages/Home';
 import Poll from './pages/Poll';
 import TeamPage from './pages/TeamPage';
@@ -410,7 +419,50 @@ function App() {
       }
     });
 
-    stats.sort((a, b) => b.wins - a.wins || b.rating - a.rating);
+    // Build real-poll rank lookup for quality-win scoring
+    const basePoll = cfpPoll.isLoaded ? cfpPoll : apPoll;
+    const pollRankById = {};
+    if (basePoll.rankings) {
+      const ALIASES = {
+        'ole miss':'miss','mississippi':'miss','southern california':'usc',
+        'louisiana state':'lsu','brigham young':'byu','southern methodist':'smu',
+        'texas christian':'tcu','central florida':'ucf','connecticut':'uconn',
+        'pittsburgh':'pitt','appalachian state':'app','miami (fl)':'mia',
+      };
+      basePoll.rankings.forEach(e => {
+        if (e.rank > 25) return;
+        const lower = e.school.toLowerCase();
+        const id = ALIASES[lower];
+        const team = id ? teams.find(t => t.id === id) : teams.find(t => t.name.toLowerCase() === lower);
+        if (team) pollRankById[team.id] = e.rank;
+      });
+    }
+
+    // Track quality wins / losses per team
+    const qualWins   = {};
+    const qualLosses = {};
+    masterSchedule.forEach(game => {
+      const winnerId = effectiveResults[game.id];
+      if (!winnerId) return;
+      const loserId = winnerId === game.home ? game.away : game.home;
+      const oppRankW = pollRankById[loserId];
+      const oppRankL = pollRankById[winnerId];
+      if (oppRankW != null) { if (!qualWins[winnerId])   qualWins[winnerId]   = []; qualWins[winnerId].push(oppRankW);   }
+      if (oppRankL != null) { if (!qualLosses[loserId])  qualLosses[loserId]  = []; qualLosses[loserId].push(oppRankL);  }
+    });
+
+    // Projected score for playoff seeding — mirrors Poll.jsx logic
+    const projScore = (t) => {
+      const momentum  = pollRankById[t.id] != null ? (26 - pollRankById[t.id]) * 4 : 0;
+      const winBase   = t.wins * 10;
+      const qualBonus = (qualWins[t.id] || []).reduce((s, r) => s + (26 - r) * 2.5, 0);
+      const ql        = (qualLosses[t.id] || []).length;
+      const penalty   = (t.losses - ql) * 35 + ql * 12;
+      const prestige  = PLAYOFF_CONF_PRESTIGE[t.conf] ?? 1.0;
+      return (momentum + winBase + qualBonus - penalty) * prestige;
+    };
+
+    stats.sort((a, b) => projScore(b) - projScore(a));
     stats.forEach((t, i) => t.rank = i + 1);
 
     const confs = [...new Set(stats.map(t => t.conf))].filter(c => c !== 'Independent');
@@ -430,8 +482,21 @@ function App() {
 
     const ccgsComplete = ccGames.length > 0 && ccGames.every(g => effectiveResults[g.id]);
 
+    // Current conference leaders (for "If Playoff Today" seeding, before CCGs resolve)
+    const confLeaders = {};
+    confs.forEach(conf => {
+      const leader = stats.filter(t => t.conf === conf)
+        .sort((a, b) => b.confWins - a.confWins || b.wins - a.wins || b.rating - a.rating)[0];
+      if (leader) confLeaders[conf] = leader.id;
+    });
+
+    // Quick team record lookup for display
+    const teamRecords = {};
+    stats.forEach(t => { teamRecords[t.id] = { wins: t.wins, losses: t.losses }; });
+
     let seedsArray = [];
     let seedMap = {};
+    let seedReasons = {};
     let cfpGames = [];
     let bowlGames = [];
 
@@ -456,8 +521,15 @@ function App() {
          atLarges = remaining.slice(0, 7);
       }
 
-      seedsArray = [...top4Champs, ...[...(fifthChamp ? [fifthChamp] : []), ...atLarges].sort((a, b) => a.rank - b.rank)];
+      // All 12 qualifiers seeded strictly by overall rank — no automatic byes for conference champs
+      const field12 = [...top4Champs, ...(fifthChamp ? [fifthChamp] : []), ...atLarges];
+      seedsArray = field12.sort((a, b) => a.rank - b.rank);
       seedsArray.forEach((t, i) => seedMap[t.id] = i + 1);
+
+      // Record why each team earned their seed
+      top4Champs.forEach(t => { seedReasons[t.id] = `Auto · ${t.conf} Champ`; });
+      if (fifthChamp) seedReasons[fifthChamp.id] = `Auto · Best G5 (${fifthChamp.conf})`;
+      atLarges.forEach(t => { seedReasons[t.id] = `At-Large`; });
       const getSeed = (num) => seedsArray[num - 1];
 
       cfpGames = [
@@ -513,7 +585,7 @@ function App() {
         .map(b => ({ ...b, home: b.home.id, away: b.away.id, round: 5, isBowl: true }));
     }
 
-    return { seeds: seedsArray, seedMap, games: [...ccGames, ...cfpGames, ...bowlGames], ccGames, cfpGames, bowlGames, ccgsComplete };
+    return { seeds: seedsArray, seedMap, seedReasons, confLeaders, teamRecords, games: [...ccGames, ...cfpGames, ...bowlGames], ccGames, cfpGames, bowlGames, ccgsComplete };
   }, [teams, masterSchedule, effectiveResults]);
 
   return (
@@ -531,7 +603,7 @@ function App() {
             <Route path="/schedule" element={<Schedule teams={teams} schedule={masterSchedule} results={effectiveResults} onPick={handlePick} liveResults={liveResultsData} />} />
             <Route path="/standings" element={<ConferenceStandings teams={teams} schedule={masterSchedule} results={effectiveResults} />} />
             <Route path="/teams" element={<TeamsDirectory teams={teams} masterSchedule={masterSchedule} results={effectiveResults} onSimulate={runSimulation} />} />
-            <Route path="/postseason" element={<PlayoffBracket playoffData={playoffData} teams={teams} results={effectiveResults} onPick={handlePick} />} />
+            <Route path="/postseason" element={<PlayoffBracket playoffData={playoffData} teams={teams} schedule={masterSchedule} results={effectiveResults} onPick={handlePick} />} />
             <Route path="/team/:teamId" element={<TeamPage teams={teams} schedule={masterSchedule} results={effectiveResults} onPick={handlePick} playoffData={playoffData} liveResults={liveResultsData} />} />
             <Route path="/game/:gameId" element={<GamePage teams={teams} schedule={masterSchedule} />} />
 
