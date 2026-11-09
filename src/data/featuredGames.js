@@ -207,4 +207,28 @@ export const featuredGames = {
   592: {
     summary: `#1 Miami was tested for four quarters at Chapel Hill, holding off a relentless UNC squad 38–35 in a road shootout that went down to the wire. The Hurricanes led throughout — taking a 7–0 first-quarter advantage before UNC erupted for 14 second-quarter points to claw back to 14–17 at the half. The third quarter remained tight, with Miami extending the cushion to 24–21, but the fourth turned into an all-out scoring war. Both teams exchanged touchdown drives in a frantic closing stretch that saw 28 combined fourth-quarter points, with Miami maintaining their slim three-point lead to escape 38–35. UNC had every chance to knock off the nation's top team on their home turf and came painfully close. Miami stays #1 — but questions about their defense on the road will follow them into the stretch run.`,
   },
+
+  // ── Week 11: Nov 7 ───────────────────────────────────────────────────────
+  // ESPN GameDay + ABC Night: #11 Notre Dame at #1 Miami (Miami Gardens, FL)
+  653: {
+    gameDay: true,
+    abcNight: true,
+    summary: `College GameDay descended on Miami in what shaped up as the game of the year — #11 Notre Dame against #1 Miami — and the Fighting Irish delivered one of the defining results of the 2026 college football season. Notre Dame jumped out to a 3–0 first-quarter lead, then blew the game wide open in the second quarter with 14 unanswered points to build a commanding 17–3 halftime advantage. Miami's offense finally came alive in the third quarter, erupting for 14 points to cut the deficit to 24–17 and bring the Hard Rock Stadium crowd roaring back to life. But Notre Dame answered with another touchdown drive in the fourth to put it away 31–24. The upset shatters Miami's #1 ranking — the Hurricanes tumble from the top spot to #5 in the aftermath — and vaults Notre Dame into serious College Football Playoff contention at #3. It was the finest road performance Notre Dame has delivered all season, and one of the signature wins in the program's recent history.`,
+  },
+
+  // FOX Big Noon: #10 Ole Miss at #2 Georgia (Athens, GA)
+  639: {
+    bigNoon: true,
+    summary: `#2 Georgia delivered a devastating statement to the College Football Playoff committee, dismantling #10 Ole Miss 42–7 in Athens in one of the most commanding wins of the 2026 season. The Bulldogs were absolutely relentless from the opening snap — scoring touchdowns on consecutive drives to lead 14–0 after the first quarter, then adding another 14 points in the second to build an astonishing 28–0 halftime lead. The second half was academic — Georgia added 7 more in each of the third and fourth quarters while holding Ole Miss completely scoreless until garbage time. The 35-point final margin was the punctuation mark Georgia needed after the heartbreaking loss to Auburn earlier in the season. With Miami falling to Notre Dame on the same day, Georgia's path to #1 is now clear — and the Dawgs have made their case in the most convincing fashion possible.`,
+  },
+
+  // RIVALRY: #9 BYU at #3 Utah (Salt Lake City, UT)
+  644: {
+    summary: `The Holy War lived up to every expectation as #3 Utah and #9 BYU met in a rivalry game that swung dramatically before the Utes prevailed 28–20. Utah jumped out to a commanding 14–3 first-quarter lead, but BYU's offense erupted for 17 second-quarter points to flip the script entirely — taking a 20–14 halftime lead and silencing the Utah faithful. What followed was an extraordinary defensive performance by the Utes: BYU was completely shut out over the final two quarters, scoring zero points in the third and fourth. Meanwhile, Utah methodically scored 7 in each of those quarters to regain the lead and pull away. The 28–20 final masked just how close BYU came to pulling off a seismic upset — and Utah's second-half defensive performance was the story of one of the year's best rivalry games.`,
+  },
+
+  // UPSET: Tennessee at #6 Kentucky (Lexington, KY)
+  643: {
+    summary: `Tennessee turned a tense game into a rout, overwhelming #6 Kentucky 34–6 in a performance powered by one of the most dominant fourth quarters of the season. The Volunteers led 7–0 after the first quarter and 10–6 at halftime — close enough for the Kentucky crowd to still believe. The third quarter remained tight at 13–6 as both defenses traded stops. Then the fourth quarter happened: Tennessee's offense absolutely exploded for 21 unanswered points while the defense kept Kentucky completely off the board. The Wildcats went scoreless across the final 30 minutes as the Vols closed out a stunning 34–6 victory. Tennessee vaults from #16 to #9 in the new AP poll — Kentucky tumbles out of the top 10 entirely. The Vols are suddenly back in the SEC and playoff conversation.`,
+  },
 };

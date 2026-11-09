@@ -8,6 +8,7 @@ import { coaches } from '../data/coaches';
 import { featuredGames } from '../data/featuredGames';
 import { gameSummaries } from '../data/gameSummaries';
 import { apPoll } from '../data/apPoll';
+import { cfpPoll } from '../data/cfpPoll';
 
 const AP_ALIASES = {
   'ole miss': 'miss', 'mississippi': 'miss',
@@ -90,13 +91,18 @@ function GamePage({ teams, schedule }) {
     return map;
   }, [teams]);
 
-  // AP rank AT TIME of this game (use poll from the week before)
-  const preGameRankMap = useMemo(() => {
-    if (!game) return {};
+  // Pre-game rank map — CFP preferred (released Tuesdays), falls back to AP
+  const { preGameRankMap, preGameRankSource } = useMemo(() => {
+    if (!game) return { preGameRankMap: {}, preGameRankSource: 'AP' };
     const gameWeek = getGameWeek(game.date);
-    // Use the poll that was current FOR this game week (CFBD stores it as history[gameWeek])
     const histKey = String(gameWeek);
-    const hist = apPoll.history?.[histKey] ?? [];
+
+    // Try CFP first, then AP
+    const cfpHist = cfpPoll.history?.[histKey] ?? [];
+    const apHist  = apPoll.history?.[histKey] ?? [];
+    const useCFP  = cfpHist.length > 0;
+    const hist = useCFP ? cfpHist : apHist;
+
     const map = {};
     hist.forEach(e => {
       if (e.rank > 25) return;
@@ -105,7 +111,7 @@ function GamePage({ teams, schedule }) {
       const team = aliasId ? teams.find(t => t.id === aliasId) : teams.find(t => t.name.toLowerCase() === lower);
       if (team) map[team.id] = e.rank;
     });
-    return map;
+    return { preGameRankMap: map, preGameRankSource: useCFP ? 'CFP' : 'AP' };
   }, [game, teams]);
 
   const coaches_ = { home: homeTeam ? coaches[homeTeam.id] : null, away: awayTeam ? coaches[awayTeam.id] : null };
@@ -221,7 +227,7 @@ function GamePage({ teams, schedule }) {
             <div className="relative z-10 flex flex-col items-center gap-1.5">
               {preGameRankMap[awayTeam?.id] && (
                 <span className="bg-white/25 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
-                  Was #{preGameRankMap[awayTeam.id]} AP
+                  #{preGameRankMap[awayTeam.id]} {preGameRankSource}
                 </span>
               )}
               {awayTeam?.logo && (
@@ -265,7 +271,7 @@ function GamePage({ teams, schedule }) {
             <div className="relative z-10 flex flex-col items-center gap-1.5">
               {preGameRankMap[homeTeam?.id] && (
                 <span className="bg-white/25 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
-                  Was #{preGameRankMap[homeTeam.id]} AP
+                  #{preGameRankMap[homeTeam.id]} {preGameRankSource}
                 </span>
               )}
               {homeTeam?.logo && (

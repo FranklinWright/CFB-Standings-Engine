@@ -46,8 +46,24 @@ function Schedule({ teams, schedule, results, onPick, liveResults = {} }) {
     return map;
   }, [schedule]);
 
-  const weekGames = gamesByWeek[selectedWeek] || [];
-  const weekDates = getDatesForWeek(selectedWeek);
+  // CCG (week 15) games fold into week 13's display
+  const weekGames = useMemo(() => {
+    const base = gamesByWeek[selectedWeek] || [];
+    if (selectedWeek === 13) return [...base, ...(gamesByWeek[15] || [])];
+    return base;
+  }, [gamesByWeek, selectedWeek]);
+
+  const weekDates = useMemo(() => {
+    const base = getDatesForWeek(selectedWeek);
+    if (selectedWeek === 13) {
+      const ccgDates = getDatesForWeek(15);
+      return [...new Set([...base, ...ccgDates])];
+    }
+    return base;
+  }, [selectedWeek]);
+
+  // Selector only shows weeks 0–13 (CCG folded in)
+  const selectorWeeks = ALL_WEEKS.filter(w => w <= 13 && gamesByWeek[w]?.length > 0);
 
   // Games grouped by date within the selected week
   const gamesByDate = useMemo(() => {
@@ -262,84 +278,93 @@ function Schedule({ teams, schedule, results, onPick, liveResults = {} }) {
 
       {/* Sticky week selector + conference filter */}
       <div className="sticky top-[65px] z-30 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-        {/* Week tabs */}
-        <div className="max-w-5xl mx-auto px-4 pt-3 pb-2 overflow-x-auto scrollbar-none">
-          <div className="flex gap-2 min-w-max">
-            {ALL_WEEKS.filter(w => gamesByWeek[w]?.length > 0).map(w => {
-              const isPast = w < CURRENT_WEEK;
-              const isCurrent = w === CURRENT_WEEK;
-              const isSelected = w === selectedWeek;
-              return (
-                <button
-                  key={w}
-                  onClick={() => setSelectedWeek(w)}
-                  className={`relative flex flex-col items-center justify-center gap-0.5 px-4 py-3 rounded-xl min-w-[60px] transition-all duration-150 cursor-pointer
-                    ${isSelected
-                      ? isPast ? 'bg-slate-600 text-white shadow-md'
-                        : isCurrent ? 'text-white shadow-md'
-                        : 'bg-slate-900 text-white shadow-md'
-                      : isPast ? 'bg-gray-100 text-slate-400 hover:bg-gray-200'
-                        : isCurrent ? 'text-white/90 hover:opacity-90'
-                        : 'bg-white border border-gray-200 text-slate-500 hover:bg-gray-50 hover:border-slate-300'
-                    }`}
-                  style={
-                    isSelected && isCurrent ? { backgroundColor: '#25bee8' }
-                    : !isSelected && isCurrent ? { backgroundColor: '#25bee8' }
-                    : {}
-                  }
-                >
-                  <span className="text-[8px] font-black uppercase tracking-widest leading-none opacity-70">
-                    {w === 0 ? 'PRE' : 'WK'}
-                  </span>
-                  <span className="text-lg font-black leading-none">
-                    {w === 0 ? '0' : w}
-                  </span>
-                  {isCurrent && (
-                    <span className="text-[7px] font-black uppercase tracking-widest leading-none opacity-80">
-                      NOW
+        {/* Week pills */}
+        <div className="relative max-w-5xl mx-auto">
+          <div className="px-4 pt-3 pb-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="flex gap-2 min-w-max">
+              {selectorWeeks.map(w => {
+                const isPast = w < CURRENT_WEEK;
+                const isCurrent = w === CURRENT_WEEK;
+                const isSelected = w === selectedWeek;
+                return (
+                  <button
+                    key={w}
+                    onClick={() => setSelectedWeek(w)}
+                    className={`relative flex flex-col items-center justify-center gap-0.5 px-4 py-3 rounded-xl min-w-[60px] transition-all duration-150 cursor-pointer
+                      ${isSelected
+                        ? isPast ? 'bg-slate-600 text-white shadow-md'
+                          : isCurrent ? 'text-white shadow-md'
+                          : 'bg-slate-900 text-white shadow-md'
+                        : isPast ? 'bg-gray-100 text-slate-400 hover:bg-gray-200'
+                          : isCurrent ? 'text-white/90 hover:opacity-90'
+                          : 'bg-white border border-gray-200 text-slate-500 hover:bg-gray-50 hover:border-slate-300'
+                      }`}
+                    style={
+                      (isSelected && isCurrent) || (!isSelected && isCurrent)
+                        ? { backgroundColor: '#25bee8' }
+                        : {}
+                    }
+                  >
+                    <span className="text-[8px] font-black uppercase tracking-widest leading-none opacity-70">
+                      {w === 0 ? 'PRE' : 'WK'}
                     </span>
-                  )}
-                </button>
-              );
-            })}
+                    <span className="text-lg font-black leading-none">
+                      {w === 0 ? '0' : w}
+                    </span>
+                    {isCurrent && (
+                      <span className="text-[7px] font-black uppercase tracking-widest leading-none opacity-80">
+                        NOW
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white/95 to-transparent pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/95 to-transparent pointer-events-none" />
         </div>
 
         {/* Conference filter */}
         <div className="border-t border-gray-100">
-          <div className="max-w-5xl mx-auto px-4 py-2 overflow-x-auto">
-            <div className="flex items-center gap-2 min-w-max">
-              <span className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-300 shrink-0 select-none">
-                Confs:
-              </span>
-              {CONF_CHIPS.map(({ key, label, bg, fg }) => {
-                const active = pinnedConfs.has(key);
-                return (
+          <div className="relative max-w-5xl mx-auto">
+            <div className="px-4 py-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex items-center gap-2 min-w-max">
+                <span className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-300 shrink-0 select-none">
+                  Confs:
+                </span>
+                {CONF_CHIPS.map(({ key, label, bg, fg }) => {
+                  const active = pinnedConfs.has(key);
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => toggleConf(key)}
+                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-150 cursor-pointer
+                        ${active
+                          ? 'shadow-md scale-105 ring-2 ring-offset-1'
+                          : 'bg-gray-100 text-slate-500 hover:bg-gray-200 hover:text-slate-700'
+                        }`}
+                      style={active
+                        ? { backgroundColor: bg, color: fg, ringColor: bg }
+                        : {}}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+                {pinnedConfs.size > 0 && (
                   <button
-                    key={key}
-                    onClick={() => toggleConf(key)}
-                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-150 cursor-pointer
-                      ${active
-                        ? 'shadow-md scale-105 ring-2 ring-offset-1'
-                        : 'bg-gray-100 text-slate-500 hover:bg-gray-200 hover:text-slate-700'
-                      }`}
-                    style={active
-                      ? { backgroundColor: bg, color: fg, ringColor: bg }
-                      : {}}
+                    onClick={() => setPinnedConfs(new Set())}
+                    className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-400 hover:bg-red-50 transition-all cursor-pointer"
                   >
-                    {label}
+                    Clear ×
                   </button>
-                );
-              })}
-              {pinnedConfs.size > 0 && (
-                <button
-                  onClick={() => setPinnedConfs(new Set())}
-                  className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-400 hover:bg-red-50 transition-all cursor-pointer"
-                >
-                  Clear ×
-                </button>
-              )}
+                )}
+              </div>
             </div>
+            {/* Gradient fade edges */}
+            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white/95 to-transparent pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/95 to-transparent pointer-events-none" />
           </div>
         </div>
       </div>

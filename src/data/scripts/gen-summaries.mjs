@@ -9,6 +9,7 @@ const ROOT = resolve(__dir, '../../..');
 const { masterSchedule, teams } = await import(pathToFileURL(resolve(ROOT, 'src/data/teams.js')).href);
 const { liveScores, liveResults, liveLineScores } = await import(pathToFileURL(resolve(ROOT, 'src/data/liveResults.js')).href);
 const { apPoll } = await import(pathToFileURL(resolve(ROOT, 'src/data/apPoll.js')).href);
+const { cfpPoll } = await import(pathToFileURL(resolve(ROOT, 'src/data/cfpPoll.js')).href);
 
 const AP_ALIASES = {
   'ole miss': 'miss', 'mississippi': 'miss',
@@ -28,11 +29,11 @@ const DATE_TO_WEEK = {
   'Nov 1': '10', 'Nov 3': '10', 'Nov 4': '10', 'Nov 5': '10', 'Nov 6': '10', 'Nov 7': '10',
 };
 
-// Build pre-game rank maps keyed by week
+// Build pre-game rank maps keyed by week — CFP preferred, AP as fallback
 const weekRanks = {};
-Object.entries(apPoll.history || {}).forEach(([w, rankings]) => {
+const buildWeekMap = (histEntry) => {
   const map = {};
-  rankings.forEach(e => {
+  (histEntry || []).forEach(e => {
     if (e.rank > 25) return;
     const lower = e.school.toLowerCase();
     const aliasId = AP_ALIASES[lower];
@@ -41,13 +42,26 @@ Object.entries(apPoll.history || {}).forEach(([w, rankings]) => {
       : teams.find(t => t.name.toLowerCase() === lower);
     if (team) map[team.id] = e.rank;
   });
-  weekRanks[w] = map;
+  return map;
+};
+
+// First load AP history as the base
+Object.entries(apPoll.history || {}).forEach(([w, rankings]) => {
+  weekRanks[w] = buildWeekMap(rankings);
+});
+
+// Override with CFP where available (CFP is preferred for newer weeks)
+Object.entries(cfpPoll.history || {}).forEach(([w, rankings]) => {
+  if (rankings && rankings.length > 0) {
+    weekRanks[`cfp_${w}`] = buildWeekMap(rankings);
+  }
 });
 
 function getRanks(gameDate, homeId, awayId) {
   const week = DATE_TO_WEEK[gameDate] || '1';
   const preWeek = String(Math.max(1, parseInt(week, 10) - 1));
-  const ranks = weekRanks[preWeek] || weekRanks['1'] || {};
+  // Prefer CFP for the pre-game week when it's available
+  const ranks = weekRanks[`cfp_${preWeek}`] || weekRanks[preWeek] || weekRanks['1'] || {};
   return { homeRank: ranks[homeId] || null, awayRank: ranks[awayId] || null };
 }
 

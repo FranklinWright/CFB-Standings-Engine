@@ -7,6 +7,7 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { apPoll } from '../data/apPoll';
+import { cfpPoll } from '../data/cfpPoll';
 
 /**
  * ConferenceStandings Component
@@ -36,9 +37,11 @@ function ConferenceStandings({ teams, schedule, results }) {
   };
 
   const nationalRanks = useMemo(() => {
-    if (!apPoll.isLoaded || !apPoll.rankings?.length) return {};
+    // Prefer CFP rankings when available, fall back to AP
+    const source = (cfpPoll.isLoaded && cfpPoll.rankings?.length) ? cfpPoll : apPoll;
+    if (!source.isLoaded || !source.rankings?.length) return {};
     const map = {};
-    apPoll.rankings.forEach(e => {
+    source.rankings.forEach(e => {
       if (e.rank > 25) return;
       const lower = e.school.toLowerCase();
       const aliasId = AP_ALIASES[lower];
@@ -50,9 +53,13 @@ function ConferenceStandings({ teams, schedule, results }) {
     return map;
   }, [teams]);
 
+  // Conferences that send top 2 teams to a CCG (all except Independent)
+  const CCG_CONFS = new Set(['SEC', 'Big Ten', 'ACC', 'Big 12', 'Pac-12', 'American', 'Mountain West', 'Sun Belt', 'MAC', 'CUSA']);
+
   /**
    * Aggregates standings data. Filters out 'FCS/Other', calculates
-   * conference and overall records, and sorts by conference success.
+   * conference and overall records, and sorts by conference success
+   * with H2H as the first tiebreaker.
    */
   const standingsData = useMemo(() => {
     const stats = teams.map(t => ({
@@ -60,56 +67,67 @@ function ConferenceStandings({ teams, schedule, results }) {
       wins: 0,
       losses: 0,
       confWins: 0,
-      confLosses: 0
+      confLosses: 0,
     }));
+
+    // Track head-to-head: h2hWins[winnerId][loserId] = true
+    const h2hWins = {};
 
     schedule.forEach(game => {
       const winnerId = results[game.id];
-      if (winnerId) {
-        const homeTeam = teams.find(t => t.id === game.home);
-        const awayTeam = teams.find(t => t.id === game.away);
+      if (!winnerId) return;
 
-        if (!homeTeam || !awayTeam) {
-          const winnerStats = stats.find(t => t.id === winnerId);
-          const loserId = winnerId === game.home ? game.away : game.home;
-          const loserStats = stats.find(t => t.id === loserId);
-          if (winnerStats) winnerStats.wins++;
-          if (loserStats) loserStats.losses++;
-          return;
-        }
+      const homeTeam = teams.find(t => t.id === game.home);
+      const awayTeam = teams.find(t => t.id === game.away);
+      const loserId = winnerId === game.home ? game.away : game.home;
 
-        const loserId = winnerId === game.home ? game.away : game.home;
-        const winT = stats.find(t => t.id === winnerId);
-        const lossT = stats.find(t => t.id === loserId);
+      const winT = stats.find(t => t.id === winnerId);
+      const lossT = stats.find(t => t.id === loserId);
 
-        if (winT) winT.wins++;
-        if (lossT) lossT.losses++;
+      if (winT) winT.wins++;
+      if (lossT) lossT.losses++;
 
-        if (homeTeam.conf === awayTeam.conf) {
-          if (winT) winT.confWins++;
-          if (lossT) lossT.confLosses++;
-        }
+      if (homeTeam && awayTeam && homeTeam.conf === awayTeam.conf) {
+        if (winT) winT.confWins++;
+        if (lossT) lossT.confLosses++;
+        // Record H2H
+        if (!h2hWins[winnerId]) h2hWins[winnerId] = {};
+        h2hWins[winnerId][loserId] = true;
       }
     });
 
     const popularityOrder = [
       'SEC', 'Big Ten', 'Big 12', 'ACC', 'Pac-12',
-      'American', 'CUSA', 'Mountain West', 'Sun Belt', 'MAC', 'Independent'
+      'American', 'Mountain West', 'Sun Belt', 'MAC', 'CUSA', 'Independent'
     ];
 
     const existingConfs = [...new Set(teams.filter(t => t.conf !== 'FCS/Other').map(t => t.conf))];
-
     const sortedConfs = existingConfs.sort((a, b) => {
-      let indexA = popularityOrder.indexOf(a);
-      let indexB = popularityOrder.indexOf(b);
-      return (indexA === -1 ? 99 : indexA) - (indexB === -1 ? 99 : indexB);
+      const iA = popularityOrder.indexOf(a);
+      const iB = popularityOrder.indexOf(b);
+      return (iA === -1 ? 99 : iA) - (iB === -1 ? 99 : iB);
     });
 
     return sortedConfs.map(conf => ({
       name: conf,
+      hasCCG: CCG_CONFS.has(conf),
       teams: stats
         .filter(t => t.conf === conf)
-        .sort((a, b) => b.confWins - a.confWins || b.wins - a.wins || b.rating - a.rating)
+        .sort((a, b) => {
+          // 1. Conference wins
+          if (b.confWins !== a.confWins) return b.confWins - a.confWins;
+          // 2. Conference losses (fewer = better)
+          if (a.confLosses !== b.confLosses) return a.confLosses - b.confLosses;
+          // 3. H2H (did one beat the other in conference play?)
+          if (h2hWins[a.id]?.[b.id]) return -1;
+          if (h2hWins[b.id]?.[a.id]) return 1;
+          // 4. Overall win percentage
+          const aPct = a.wins / ((a.wins + a.losses) || 1);
+          const bPct = b.wins / ((b.wins + b.losses) || 1);
+          if (Math.abs(bPct - aPct) > 0.001) return bPct - aPct;
+          // 5. Rating as final fallback
+          return b.rating - a.rating;
+        }),
     }));
   }, [teams, schedule, results]);
 
@@ -171,42 +189,58 @@ function ConferenceStandings({ teams, schedule, results }) {
                 <div className="col-span-3 text-center">OVERALL</div>
               </div>
 
-              {conf.teams.map((team, index) => (
-                <Link
-                  to={`/team/${team.id}`}
-                  key={team.id}
-                  className="cursor-pointer grid grid-cols-12 p-4 md:p-5 items-center hover:bg-gray-50 transition-colors group"
-                >
-                  <div className="col-span-1 text-center font-black text-slate-900 group-hover:text-[#25bee8] transition-colors">{index + 1}</div>
-
-                  <div className="col-span-6 md:col-span-5 flex items-center gap-2 md:gap-4">
-                    <div className="hidden sm:block w-1.5 h-8 md:h-10 rounded-full shadow-sm" style={{ backgroundColor: team.color }} />
-
-                    {team.logo && (
-                      <div className="w-8 h-8 md:w-10 md:h-10 shrink-0">
-                        <img
-                          src={getLogoSrc(team)}
-                          alt={team.name}
-                          className="w-full h-full object-contain drop-shadow-sm group-hover:scale-110 transition-transform duration-300"
-                        />
+              {conf.teams.map((team, index) => {
+                const isCCGBubble = conf.hasCCG && index === 2;
+                return (
+                  <React.Fragment key={team.id}>
+                    {/* Divider after #2 to show CCG cutline */}
+                    {isCCGBubble && (
+                      <div className="relative flex items-center gap-2 px-4 py-1 bg-gray-50">
+                        <div className="flex-1 h-px bg-gray-200" />
+                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">CCG Cutline</span>
+                        <div className="flex-1 h-px bg-gray-200" />
                       </div>
                     )}
+                    <Link
+                      to={`/team/${team.id}`}
+                      className="cursor-pointer grid grid-cols-12 p-4 md:p-5 items-center hover:bg-gray-50 transition-colors group"
+                    >
+                      <div className="col-span-1 text-center font-black text-slate-900 group-hover:text-[#25bee8] transition-colors">
+                        {index + 1}
+                      </div>
 
-                    <div className="flex items-center gap-1.5 truncate">
-                      {nationalRanks[team.id] <= 25 && <span className="font-black text-slate-900 text-xs">#{nationalRanks[team.id]}</span>}
-                      <span className="font-bold text-slate-800 uppercase text-xs md:text-sm truncate group-hover:text-slate-950">{team.name}</span>
-                    </div>
-                  </div>
+                      <div className="col-span-6 md:col-span-5 flex items-center gap-2 md:gap-4">
+                        <div className="hidden sm:block w-1.5 h-8 md:h-10 rounded-full shadow-sm" style={{ backgroundColor: team.color }} />
 
-                  <div className="col-span-2 md:col-span-3 text-center font-black text-slate-900 text-base md:text-lg">
-                    {team.confWins}<span className="text-slate-300 font-light mx-0.5">-</span>{team.confLosses}
-                  </div>
+                        {team.logo && (
+                          <div className="w-8 h-8 md:w-10 md:h-10 shrink-0">
+                            <img
+                              src={getLogoSrc(team)}
+                              alt={team.name}
+                              className="w-full h-full object-contain drop-shadow-sm group-hover:scale-110 transition-transform duration-300"
+                            />
+                          </div>
+                        )}
 
-                  <div className="col-span-3 text-center font-bold text-slate-900 text-sm md:text-base">
-                    {team.wins}-{team.losses}
-                  </div>
-                </Link>
-              ))}
+                        <div className="flex items-center gap-1.5 truncate">
+                          {nationalRanks[team.id] <= 25 && (
+                            <span className="font-black text-slate-900 text-xs">#{nationalRanks[team.id]}</span>
+                          )}
+                          <span className="font-bold text-slate-800 uppercase text-xs md:text-sm truncate group-hover:text-slate-950">{team.name}</span>
+                        </div>
+                      </div>
+
+                      <div className="col-span-2 md:col-span-3 text-center font-black text-slate-900 text-base md:text-lg">
+                        {team.confWins}<span className="text-slate-300 font-light mx-0.5">-</span>{team.confLosses}
+                      </div>
+
+                      <div className="col-span-3 text-center font-bold text-slate-900 text-sm md:text-base">
+                        {team.wins}-{team.losses}
+                      </div>
+                    </Link>
+                  </React.Fragment>
+                );
+              })}
             </div>
           </div>
         ))}
