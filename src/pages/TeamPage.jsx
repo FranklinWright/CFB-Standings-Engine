@@ -9,7 +9,7 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { historicalData } from '../data/history';
 import { isPastDate } from '../data/weekMap';
 import { liveScores } from '../data/liveResults';
-import { apPoll } from '../data/apPoll';
+import { cfpPoll } from '../data/cfpPoll';
 import { coaches } from '../data/coaches';
 import { playerStats as allPlayerStats } from '../data/playerStats';
 import { teamSeasonStats as allTeamSeasonStats } from '../data/teamSeasonStats';
@@ -107,11 +107,11 @@ function TeamPage({ teams, schedule, results, onPick, playoffData, liveResults =
     'miami (fl)': 'miami',
   };
 
-  // Map of teamId → AP rank for all top-25 teams
+  // Map of teamId → CFP rank for all top-25 teams
   const apRankMap = useMemo(() => {
-    if (!apPoll.isLoaded || !apPoll.rankings?.length) return {};
+    if (!cfpPoll.isLoaded || !cfpPoll.rankings?.length) return {};
     const map = {};
-    apPoll.rankings.forEach(e => {
+    cfpPoll.rankings.forEach(e => {
       if (e.rank > 25) return;
       const lower = e.school.toLowerCase();
       const aliasId = AP_ALIASES[lower];
@@ -270,7 +270,7 @@ function TeamPage({ teams, schedule, results, onPick, playoffData, liveResults =
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-1">
                   {apRank && (
                     <span className="bg-white/20 backdrop-blur-sm text-white font-black text-sm px-3 py-1 rounded-full drop-shadow-md border border-white/30">
-                      AP #{apRank}
+                      CFP #{apRank}
                     </span>
                   )}
                   {playoffSeed && (

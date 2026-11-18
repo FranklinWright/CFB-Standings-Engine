@@ -27,6 +27,8 @@ const DATE_TO_WEEK = {
   'Oct 24': '8', 'Oct 25': '8', 'Oct 26': '8',
   'Oct 27': '9', 'Oct 28': '9', 'Oct 29': '9', 'Oct 30': '9', 'Oct 31': '9',
   'Nov 1': '10', 'Nov 3': '10', 'Nov 4': '10', 'Nov 5': '10', 'Nov 6': '10', 'Nov 7': '10',
+  'Nov 10': '12', 'Nov 11': '12', 'Nov 12': '12', 'Nov 13': '12', 'Nov 14': '12',
+  'Nov 17': '13', 'Nov 18': '13', 'Nov 19': '13', 'Nov 20': '13', 'Nov 21': '13',
 };
 
 // Build pre-game rank maps keyed by week — CFP preferred, AP as fallback

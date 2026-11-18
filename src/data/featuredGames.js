@@ -209,7 +209,7 @@ export const featuredGames = {
   },
 
   // ── Week 11: Nov 7 ───────────────────────────────────────────────────────
-  // ESPN GameDay + ABC Night: #11 Notre Dame at #1 Miami (Miami Gardens, FL)
+  // ESPN GameDay + ABC Night: #11 Notre Dame at #1 Miami (Miami Gardens, FL — Hard Rock Stadium)
   653: {
     gameDay: true,
     abcNight: true,
@@ -230,5 +230,34 @@ export const featuredGames = {
   // UPSET: Tennessee at #6 Kentucky (Lexington, KY)
   643: {
     summary: `Tennessee turned a tense game into a rout, overwhelming #6 Kentucky 34–6 in a performance powered by one of the most dominant fourth quarters of the season. The Volunteers led 7–0 after the first quarter and 10–6 at halftime — close enough for the Kentucky crowd to still believe. The third quarter remained tight at 13–6 as both defenses traded stops. Then the fourth quarter happened: Tennessee's offense absolutely exploded for 21 unanswered points while the defense kept Kentucky completely off the board. The Wildcats went scoreless across the final 30 minutes as the Vols closed out a stunning 34–6 victory. Tennessee vaults from #16 to #9 in the new AP poll — Kentucky tumbles out of the top 10 entirely. The Vols are suddenly back in the SEC and playoff conversation.`,
+  },
+
+  // ── Week 12: Nov 14 ──────────────────────────────────────────────────────
+  // FOX Big Noon: Missouri at #1 Georgia (Athens, GA)
+  704: {
+    bigNoon: true,
+    summary: `FOX's Big Noon Kickoff came to Athens for the most anticipated matchup of Week 12 — #1 Georgia hosting #22 Missouri — and the Bulldogs left absolutely no doubt about who the best team in the country is. Georgia came out on fire with a 21-point first quarter, completely shutting out Missouri in the opening period while the offense found the end zone at will. The Bulldogs built a 31–7 halftime lead and never let Missouri breathe, cruising to a dominant 48–21 final. The Bulldogs put on a clinic from first snap to last: their defense limited Missouri to just seven combined points across three quarters before some garbage-time scoring made the final look marginally closer than it was. It was the kind of emphatic home performance that sends a message heard across the College Football Playoff landscape — #1 Georgia is in a class of their own.`,
+  },
+
+  // ESPN GameDay: #18 USC at #9 Indiana (Bloomington, IN)
+  719: {
+    gameDay: true,
+    summary: `College GameDay rolled into Bloomington for the second time this season as #9 Indiana hosted #18 USC, and the Hoosiers delivered again on the biggest stage. After a tightly contested first half that saw the teams tied 10–10 at the break — Indiana leading 7–3 through one, USC clawing back for a 10–10 halftime — the Hoosiers found another gear in the second half. Indiana outscored USC 17–3 over the final two quarters, capped by a scoreless fourth quarter from the Trojans, to win a convincing 27–13 decision. USC entered with the credentials of a ranked program but couldn't generate anything after halftime. For Indiana, it's another marquee win that strengthens their College Football Playoff résumé and keeps them firmly in the national conversation with the regular season winding down.`,
+  },
+
+  // ABC Night: #6 Texas at #21 LSU (Baton Rouge, LA — Tiger Stadium)
+  706: {
+    abcNight: true,
+    summary: `The ABC Saturday night showcase in Baton Rouge delivered an instant classic — #6 Texas escaped Death Valley with a heart-stopping 22–21 victory over #21 LSU in one of the most dramatic finishes of the entire 2026 season. LSU controlled much of the game, building a 21–13 advantage heading into the fourth quarter and looking every bit the part of a team ready to knock off a top-10 opponent. Then Texas summoned something special: the Longhorns scored 9 fourth-quarter points while holding LSU completely off the board to escape with the one-point win. The final 22–21 barely captures how close LSU came to pulling it off — their defense could not make the stop they needed in the final minutes. For Texas, surviving on the road in one of the nation's most hostile environments was exactly the kind of statement win that could define their entire season.`,
+  },
+
+  // NAIL-BITER: #2 Utah at Arizona (Tucson, AZ)
+  702: {
+    summary: `#2 Utah came within inches of a season-altering collapse in Tucson, as #23 Arizona pushed them to the absolute limit before the Utes escaped with a 40–39 thriller. Arizona jumped out to an early 7–0 lead, but Utah found their groove in the second quarter — erasing the deficit to take a 17–14 halftime advantage. The third quarter was all Wildcats: Arizona erupted for 14 unanswered points to take a stunning 28–24 lead heading to the fourth. What followed was a wild final frame — Utah's offense, playing with their backs against the wall, poured in 16 fourth-quarter points while Arizona responded with 11 of their own. The one-point Utah escape preserved their #2 ranking but raised real questions about their ability to survive the remaining schedule.`,
+  },
+
+  // DOMINANT: #13 Wake Forest at SMU (Dallas, TX)
+  718: {
+    summary: `#13 Wake Forest delivered one of the most staggering blowouts of the entire 2026 season, dismantling SMU 49–7 in Dallas in a game that was effectively over before halftime. Wake opened the scoring with 14 first-quarter points, then absolutely detonated for a stunning 28-point second quarter — building an absurd 42–0 halftime advantage. SMU had no answer for the Deacons at any point, their lone score not coming until garbage time in the third quarter. Wake's defense held the Mustangs completely scoreless through the first half while the offense operated in a different stratosphere. The 42-point margin at the break stopped the college football world on a Saturday afternoon and sent an unmistakable message: Wake Forest is a legitimate contender down the stretch.`,
   },
 };
